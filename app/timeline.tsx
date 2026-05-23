@@ -3,9 +3,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el gancho (hook) de traducción
+import { useTranslation } from 'react-i18next';
 
 export default function TimelineScreen() {
   const { colors } = useTheme();
+  
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
   
   // Atrapamos el título y la imagen de la línea del tiempo
   const { title, timelineImage } = useLocalSearchParams();
@@ -20,7 +25,8 @@ export default function TimelineScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerLeft}>
           <Ionicons name="arrow-back" size={28} color={COLOR_LIGHT_BLUE} />
-          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>Linea de Tiempo</Text>
+          {/* 3. Reemplazamos el texto fijo por el diccionario */}
+          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>{t('timeline.title')}</Text>
         </TouchableOpacity>
       </View>
 

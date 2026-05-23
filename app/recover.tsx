@@ -1,13 +1,17 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function RecoverScreen() {
   const [email, setEmail] = useState('');
   
-  // Guardamos el mensaje y también el "tipo" (error o éxito) para saber de qué color pintarlo
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState(''); // Puede ser 'error' o 'success'
+  const [messageType, setMessageType] = useState(''); 
+
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   const handleRecover = () => {
     // 1. Limpiamos mensajes anteriores
@@ -16,7 +20,7 @@ export default function RecoverScreen() {
 
     // 2. Validar que no esté vacío
     if (!email) {
-      setMessage("Por favor ingresa tu correo electrónico.");
+      setMessage(t('recover.errors.emptyEmail'));
       setMessageType('error');
       return;
     }
@@ -24,17 +28,17 @@ export default function RecoverScreen() {
     // 3. Validar formato del correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setMessage("Ingresa un correo electrónico válido (ejemplo: usuario@correo.com).");
+      setMessage(t('recover.errors.invalidEmail'));
       setMessageType('error');
       return;
     }
 
     // Si todo está bien, simulamos que enviamos el correo
     console.log("Enviando correo de recuperación a:", email);
-    setMessage("¡Listo! Si el correo está registrado, recibirás un enlace para cambiar tu contraseña.");
+    setMessage(t('recover.successMessage'));
     setMessageType('success');
     
-    // Opcional: Después de 3 segundos, lo regresamos al login automáticamente
+    // Opcional: Después de 3.5 segundos, lo regresamos al login automáticamente
     setTimeout(() => {
       router.replace('/login');
     }, 3500);
@@ -57,22 +61,22 @@ export default function RecoverScreen() {
       </View>
 
       <View style={styles.formContainer}>
-        <Text style={styles.screenTitle}>Recuperar contraseña</Text>
+        <Text style={styles.screenTitle}>{t('recover.title')}</Text>
         <Text style={styles.instructions}>
-          Ingresa el correo electrónico asociado a tu cuenta y te enviaremos las instrucciones para restablecer tu contraseña.
+          {t('recover.instructions')}
         </Text>
         
-        <Text style={styles.label}>Correo electrónico</Text>
+        <Text style={styles.label}>{t('recover.labels.email')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="correo@gmail.com"
+          placeholder={t('recover.placeholders.email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
-        {/* MENSAJE DINÁMICO: Cambia a rojo o verde dependiendo de qué pase */}
+        {/* MENSAJE DINÁMICO */}
         {message ? (
           <View style={messageType === 'error' ? styles.errorContainer : styles.successContainer}>
             <Text style={messageType === 'error' ? styles.errorText : styles.successText}>
@@ -82,12 +86,12 @@ export default function RecoverScreen() {
         ) : null}
 
         <TouchableOpacity style={styles.recoverButton} onPress={handleRecover}>
-          <Text style={styles.recoverButtonText}>Enviar enlace</Text>
+          <Text style={styles.recoverButtonText}>{t('recover.button')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginLinkContainer} onPress={handleGoToLogin}>
           <Text style={styles.loginLinkText}>
-            ¿Recordaste tu contraseña? <Text style={styles.loginLinkTextBold}>Inicia sesión</Text>
+            {t('recover.loginPrompt')} <Text style={styles.loginLinkTextBold}>{t('recover.loginLink')}</Text>
           </Text>
         </TouchableOpacity>
 
@@ -152,7 +156,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#FAFAFA',
   },
-  // ESTILOS PARA ERROR (ROJO)
   errorContainer: {
     backgroundColor: '#FDECEA',
     padding: 10,
@@ -166,7 +169,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  // ESTILOS PARA ÉXITO (VERDE)
   successContainer: {
     backgroundColor: '#E8F6F3',
     padding: 10,

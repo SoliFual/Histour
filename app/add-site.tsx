@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const MOCK_DATA = [
   { id: '1', title: 'La Catedral', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400' },
@@ -22,6 +24,9 @@ export default function AddSiteScreen() {
   const { date } = useLocalSearchParams(); 
   const { colors, theme } = useTheme();
   
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [sitioSeleccionado, setSitioSeleccionado] = useState(null);
@@ -37,7 +42,7 @@ export default function AddSiteScreen() {
 
   const confirmarAgendado = () => {
     if (!horaSeleccionada || !minutoSeleccionado) {
-      alert('Por favor, selecciona una hora y un minuto.');
+      alert(t('addSite.alerts.missingTime'));
       return;
     }
     const tiempoFinal = `${horaSeleccionada}:${minutoSeleccionado}`;
@@ -65,13 +70,14 @@ export default function AddSiteScreen() {
           </TouchableOpacity>
           <View style={styles.logoWrapper}>
             <Image source={require('../assets/images/logo.png')} style={styles.logoImage} />
+            {/* El nombre de la app no se traduce */}
             <Text style={styles.logoText}>Histour</Text>
           </View>
           
           <View style={[styles.searchBarContainer, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#1E1E1E' }]}>
             <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
             <TextInput 
-              placeholder="Buscar lugar" 
+              placeholder={t('addSite.searchPlaceholder')} 
               placeholderTextColor="#999" 
               style={[styles.searchInput, { color: colors.text }]} 
               value={search} 
@@ -87,7 +93,8 @@ export default function AddSiteScreen() {
           if (lugares.length === 0) return null;
           return (
             <View key={categoria} style={styles.sectionContainer}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{categoria}</Text>
+              {/* Traducimos el nombre de la categoría mapeándolo desde el JSON */}
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t(`addSite.categories.${categoria}`)}</Text>
               
               <View style={styles.gridRow}>
                 {lugares.map((lugar) => (
@@ -115,10 +122,10 @@ export default function AddSiteScreen() {
           <View style={[styles.modalContent, { backgroundColor: theme === 'light' ? '#FFFFFF' : colors.card }]}>
             
             <Ionicons name="time-outline" size={50} color="#4E97D1" style={{ marginBottom: 10 }} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Selecciona la hora de visita</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('addSite.modal.title')}</Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>{sitioSeleccionado?.title}</Text>
 
-            <Text style={[styles.pickerLabel, { color: colors.text }]}>Hora (Formato 24h):</Text>
+            <Text style={[styles.pickerLabel, { color: colors.text }]}>{t('addSite.modal.hourLabel')}</Text>
             <View style={[styles.pickerContainer, { backgroundColor: theme === 'light' ? '#F0F5FA' : '#121212' }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerScroll}>
                 {HORAS.map((hora) => (
@@ -141,7 +148,7 @@ export default function AddSiteScreen() {
               </ScrollView>
             </View>
 
-            <Text style={[styles.pickerLabel, { color: colors.text }]}>Minutos:</Text>
+            <Text style={[styles.pickerLabel, { color: colors.text }]}>{t('addSite.modal.minuteLabel')}</Text>
             <View style={[styles.pickerContainer, { backgroundColor: theme === 'light' ? '#F0F5FA' : '#121212', marginBottom: 25 }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerScroll}>
                 {MINUTOS.map((min) => (
@@ -166,10 +173,10 @@ export default function AddSiteScreen() {
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity style={[styles.modalButtonCancel, { borderColor: theme === 'light' ? '#999999' : '#666666' }]} onPress={() => setModalVisible(false)}>
-                <Text style={[styles.modalButtonCancelText, { color: theme === 'light' ? '#666666' : '#CCCCCC' }]}>Cancelar</Text>
+                <Text style={[styles.modalButtonCancelText, { color: theme === 'light' ? '#666666' : '#CCCCCC' }]}>{t('addSite.modal.cancelButton')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButtonConfirm} onPress={confirmarAgendado}>
-                <Text style={styles.modalButtonConfirmText}>Continuar</Text>
+                <Text style={styles.modalButtonConfirmText}>{t('addSite.modal.continueButton')}</Text>
               </TouchableOpacity>
             </View>
 

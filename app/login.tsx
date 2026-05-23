@@ -2,11 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   // 👇 Lógica de simulación de roles (Etapa 1) 👇
   const handleLogin = () => {
@@ -44,19 +49,19 @@ export default function LoginScreen() {
 
       <View style={styles.formContainer}>
         
-        <Text style={styles.screenTitle}>Iniciar sesión</Text>
+        <Text style={styles.screenTitle}>{t('login.title')}</Text>
         
-        <Text style={styles.label}>Ingresa tu correo electrónico</Text>
+        <Text style={styles.label}>{t('login.labels.email')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="correo@gmail.com"
+          placeholder={t('login.placeholders.email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
-        <Text style={styles.label}>Ingresa tu contraseña</Text>
+        <Text style={styles.label}>{t('login.labels.password')}</Text>
         <TextInput
           style={styles.input}
           placeholder="••••••••"
@@ -66,14 +71,14 @@ export default function LoginScreen() {
         />
         
         <TouchableOpacity onPress={() => router.push('/recover')}>
-          <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
+          <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+          <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.orText}>o</Text>
+        <Text style={styles.orText}>{t('login.orText')}</Text>
 
         <TouchableOpacity 
           style={styles.googleButton} 
@@ -85,14 +90,14 @@ export default function LoginScreen() {
           ) : (
             <>
               <Ionicons name="logo-google" size={20} color="#47525E" style={styles.googleIcon} />
-              <Text style={styles.googleButtonText}>Continuar con Google</Text>
+              <Text style={styles.googleButtonText}>{t('login.googleButton')}</Text>
             </>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.registerContainer} onPress={() => router.push('/register')}>
           <Text style={styles.registerText}>
-            ¿No tienes cuenta? <Text style={styles.registerTextBold}>Regístrate</Text>
+            {t('login.registerPrompt')} <Text style={styles.registerTextBold}>{t('login.registerLink')}</Text>
           </Text>
         </TouchableOpacity>
 

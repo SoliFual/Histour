@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -11,40 +13,42 @@ export default function RegisterScreen() {
   
   const [errorMessage, setErrorMessage] = useState('');
 
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const handleRegister = () => {
     // 0. Limpiamos cualquier error previo
     setErrorMessage('');
 
     // 1. Validar que ningún campo esté vacío
     if (!name || !username || !email || !password || !confirmPassword) {
-      setErrorMessage("Por favor llena todos los datos para crear tu cuenta.");
+      setErrorMessage(t('register.errors.emptyFields'));
       return; 
     }
 
     // 2. NUEVA VALIDACIÓN: Obligar a poner al menos un nombre y un apellido
-    // .trim() quita espacios al inicio/final. .split(/\s+/) separa el texto en palabras.
     const palabrasDelNombre = name.trim().split(/\s+/);
     if (palabrasDelNombre.length < 2) {
-      setErrorMessage("Por favor ingresa tu nombre y al menos un apellido.");
+      setErrorMessage(t('register.errors.missingLastName'));
       return;
     }
 
     // 3. Validar que el correo sea válido
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setErrorMessage("Ingresa un correo electrónico válido (ejemplo: usuario@correo.com).");
+      setErrorMessage(t('register.errors.invalidEmail'));
       return;
     }
 
     // 4. Validar: Contraseña de mínimo 8 caracteres
     if (password.length < 8) {
-      setErrorMessage("La contraseña debe tener al menos 8 caracteres.");
+      setErrorMessage(t('register.errors.shortPassword'));
       return;
     }
 
     // 5. Validar que las contraseñas sean idénticas
     if (password !== confirmPassword) {
-      setErrorMessage("Las contraseñas no coinciden. Vuelve a escribirlas.");
+      setErrorMessage(t('register.errors.passwordMismatch'));
       return;
     }
 
@@ -71,36 +75,36 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.screenTitle}>Crear cuenta</Text>
+          <Text style={styles.screenTitle}>{t('register.title')}</Text>
           
-          <Text style={styles.label}>Nombre completo</Text>
+          <Text style={styles.label}>{t('register.labels.fullName')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Juan Pérez"
+            placeholder={t('register.placeholders.fullName')}
             value={name}
             onChangeText={setName}
           />
 
-          <Text style={styles.label}>Nombre de usuario</Text>
+          <Text style={styles.label}>{t('register.labels.username')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="juanperez123"
+            placeholder={t('register.placeholders.username')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Ingresa tu correo electrónico</Text>
+          <Text style={styles.label}>{t('register.labels.email')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="correo@gmail.com"
+            placeholder={t('register.placeholders.email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Ingresa tu contraseña</Text>
+          <Text style={styles.label}>{t('register.labels.password')}</Text>
           <TextInput
             style={styles.input}
             placeholder="••••••••"
@@ -109,7 +113,7 @@ export default function RegisterScreen() {
             secureTextEntry={true}
           />
 
-          <Text style={styles.label}>Confirmar contraseña</Text>
+          <Text style={styles.label}>{t('register.labels.confirmPassword')}</Text>
           <TextInput
             style={styles.input}
             placeholder="••••••••"
@@ -125,12 +129,12 @@ export default function RegisterScreen() {
           ) : null}
 
           <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-            <Text style={styles.registerButtonText}>Registrarse</Text>
+            <Text style={styles.registerButtonText}>{t('register.button')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.loginLinkContainer} onPress={handleGoToLogin}>
             <Text style={styles.loginLinkText}>
-              ¿Ya tienes cuenta? <Text style={styles.loginLinkTextBold}>Inicia sesión</Text>
+              {t('register.loginPrompt')} <Text style={styles.loginLinkTextBold}>{t('register.loginLink')}</Text>
             </Text>
           </TouchableOpacity>
 

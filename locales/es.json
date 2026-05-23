@@ -1,0 +1,529 @@
+{
+  "admin": {
+    "usuarios": "Gestión de usuarios",
+    "monumentos": "Gestión de monumentos",
+    "principal": "Principal",
+    "perfil": "Usuario",
+    "buscar": "Buscar por nombre o ID...",
+    "agregar_monumento": "Agregar monumento",
+    "ver": "Ver",
+    "modificar": "Modificar",
+    "eliminar": "Eliminar"
+  },
+  "timeline": {
+    "title": "Línea de Tiempo"
+  },
+  "language": {
+    "title": "Selecciona un idioma",
+    "continue": "Continuar"
+  },
+  "siteDetails": {
+    "defaultDescription": "Este monumento es una pieza fundamental de la historia de nuestra ciudad, representando la arquitectura y cultura de su época.",
+    "readingMode": "Modo lectura",
+    "audioMode": "Modo audioguía"
+  },
+  "searchSite": {
+    "placeholder": "Buscar lugar",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región.",
+    "categories": {
+      "museos": "Museos",
+      "iglesia": "Iglesias",
+      "monumentos": "Monumentos",
+      "otros": "Otros"
+    }
+  },
+  "register": {
+    "title": "Crear cuenta",
+    "labels": {
+      "fullName": "Nombre completo",
+      "username": "Nombre de usuario",
+      "email": "Ingresa tu correo electrónico",
+      "password": "Ingresa tu contraseña",
+      "confirmPassword": "Confirmar contraseña"
+    },
+    "placeholders": {
+      "fullName": "Juan Pérez",
+      "username": "juanperez123",
+      "email": "correo@gmail.com"
+    },
+    "errors": {
+      "emptyFields": "Por favor llena todos los datos para crear tu cuenta.",
+      "missingLastName": "Por favor ingresa tu nombre y al menos un apellido.",
+      "invalidEmail": "Ingresa un correo electrónico válido (ejemplo: usuario@correo.com).",
+      "shortPassword": "La contraseña debe tener al menos 8 caracteres.",
+      "passwordMismatch": "Las contraseñas no coinciden. Vuelve a escribirlas."
+    },
+    "button": "Registrarse",
+    "loginPrompt": "¿Ya tienes cuenta? ",
+    "loginLink": "Inicia sesión"
+  },
+  "recover": {
+    "title": "Recuperar contraseña",
+    "instructions": "Ingresa el correo electrónico asociado a tu cuenta y te enviaremos las instrucciones para restablecer tu contraseña.",
+    "labels": {
+      "email": "Correo electrónico"
+    },
+    "placeholders": {
+      "email": "correo@gmail.com"
+    },
+    "button": "Enviar enlace",
+    "loginPrompt": "¿Recordaste tu contraseña? ",
+    "loginLink": "Inicia sesión",
+    "errors": {
+      "emptyEmail": "Por favor ingresa tu correo electrónico.",
+      "invalidEmail": "Ingresa un correo electrónico válido (ejemplo: usuario@correo.com)."
+    },
+    "successMessage": "¡Listo! Si el correo está registrado, recibirás un enlace para cambiar tu contraseña."
+  },
+  "readingMode": {
+    "title": "Modo Lectura",
+    "buttons": {
+      "timeline": "Mostrar linea del tiempo",
+      "rate": "Calificar"
+    },
+    "alerts": {
+      "emptyRating": "Por favor, selecciona al menos una estrella para calificar.",
+      "successRating": "¡Calificación de {{rating}} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio."
+    }
+  },
+  "privacyPolicy": {
+    "title": "Política de Privacidad",
+    "sections": {
+      "general": {
+        "title": "1. Información General",
+        "content": "La presente Política de Privacidad establece los términos en que el equipo de desarrollo de Histour usa y protege la información proporcionada por sus usuarios. Esta aplicación ha sido desarrollada como un proyecto de carácter académico y tecnológico. Estamos fuertemente comprometidos con la seguridad de los datos de nuestra comunidad de usuarios."
+      },
+      "collected": {
+        "title": "2. Información que es recogida",
+        "content": "Nuestra aplicación podrá recoger información personal básica indispensable para su funcionamiento, la cual incluye:",
+        "bullets": {
+          "name": "• Nombre y apellido.",
+          "username": "• Nombre de usuario.",
+          "email": "• Dirección de correo electrónico.",
+          "preferences": "• Preferencias dentro de la app (como el idioma seleccionado, el tema claro/oscuro y los lugares históricos marcados como \"Favoritos\")."
+        }
+      },
+      "usage": {
+        "title": "3. Uso de la información recogida",
+        "content": "Histour emplea la información exclusivamente con el fin de proporcionar la mejor experiencia de usuario posible, particularmente para mantener un registro activo y personalizar la navegación por la riqueza cultural y las rutas históricas de Jalisco. Los datos ingresados en este prototipo no son compartidos con terceros, vendidos, ni utilizados para fines de lucro o marketing externo."
+      },
+      "control": {
+        "title": "4. Control de su información personal",
+        "content": "En cualquier momento usted puede gestionar el uso de su información personal. Como usuario, tiene el derecho y la libertad de actualizar sus datos, modificar sus credenciales de acceso o solicitar la eliminación definitiva de su cuenta directamente desde el menú de Configuración en su Perfil."
+      },
+      "contact": {
+        "title": "5. Contacto y Responsables",
+        "content": "Para cualquier duda, sugerencia o aclaración sobre esta política de privacidad y el tratamiento de datos, puede contactar al equipo desarrollador a través de los siguientes correos electrónicos:"
+      }
+    }
+  },
+  "permissions": {
+    "prompt": "¿Quieres permitir que Histour haga fotos y grabe videos?",
+    "allow": "PERMITIR",
+    "deny": "DENEGAR"
+  },
+  "modal": {
+    "title": "Este es un modal",
+    "link": "Ir a la pantalla principal"
+  },
+  "login": {
+    "title": "Iniciar sesión",
+    "labels": {
+      "email": "Ingresa tu correo electrónico",
+      "password": "Ingresa tu contraseña"
+    },
+    "placeholders": {
+      "email": "correo@gmail.com"
+    },
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "loginButton": "Iniciar sesión",
+    "orText": "o",
+    "googleButton": "Continuar con Google",
+    "registerPrompt": "¿No tienes cuenta? ",
+    "registerLink": "Regístrate"
+  },
+  "intro": {
+    "subtitle": "App de historia y turismo",
+    "description": "Porque viajar no es solo llegar a un lugar, es entender la historia que tiene que contarnos.",
+    "button": "Ingresar"
+  },
+  "editProfile": {
+    "headerTitle": "Editar Perfil",
+    "logout": "Cerrar sesión",
+    "labels": {
+      "name": "Nombre:",
+      "email": "Correo Electrónico:",
+      "password": "Contraseña:",
+      "confirmPassword": "Confirmar Contraseña:"
+    },
+    "placeholders": {
+      "name": "Ej. Sofía López",
+      "confirmPassword": "Repite la nueva contraseña"
+    },
+    "saveButton": "Guardar Cambios",
+    "errors": {
+      "nameMissing": "Debes ingresar al menos tu nombre y un apellido.",
+      "passwordShort": "La nueva contraseña debe tener mínimo 8 caracteres.",
+      "passwordMismatch": "Las contraseñas no coinciden, verifícalas."
+    },
+    "alerts": {
+      "galleryPromptWeb": "\"Histour\" quiere acceder a tu galería de fotos para cambiar tu foto de perfil. ¿Permitir?",
+      "galleryOpeningWeb": "Abriendo galería...",
+      "galleryTitle": "Acceso a Fotos",
+      "galleryPrompt": "\"Histour\" quiere acceder a tu galería de fotos para cambiar tu foto de perfil.",
+      "deny": "Denegar",
+      "allow": "Permitir",
+      "galleryOpening": "Abriendo galería de fotos...",
+      "noChangesTitle": "Sin cambios",
+      "noChangesMessage": "No has modificado ningún dato todavía.",
+      "confirmSaveTitle": "Confirmar Cambios",
+      "confirmSavePrompt": "¿Estás seguro de que deseas guardar los cambios realizados en tu perfil?",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saveSuccessTitle": "¡Perfil Actualizado!",
+      "saveSuccessMessage": "Los cambios se han guardado exitosamente.",
+      "saveSuccessWeb": "¡Perfil Actualizado!\nLos cambios se han guardado exitosamente."
+    }
+  },
+  "categoryOtros": {
+    "title": "Otros",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región.",
+    "emptyText": "No hay sitios registrados en esta categoría por el momento."
+  },
+  "categoryMuseos": {
+    "title": "Museos",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región.",
+    "emptyText": "No hay museos registrados por el momento."
+  },
+  "categoryMonumentos": {
+    "title": "Monumentos",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región.",
+    "emptyText": "No hay monumentos registrados por el momento."
+  },
+  "categoryIglesias": {
+    "title": "Iglesias",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región.",
+    "emptyText": "No hay iglesias registradas por el momento."
+  },
+  "camera": {
+    "title": "Modo Escáner Inteligente",
+    "subtitle": "(Fase de Desarrollo)",
+    "description": "Aquí se activará el hardware de tu cámara. En etapas posteriores, este módulo se conectará con la API de Google Cloud Vision para identificar la arquitectura y monumentos frente a ti."
+  },
+  "audioMode": {
+    "title": "Modo Audioguía",
+    "audioTitle": "Audioguía de {{title}}",
+    "buttons": {
+      "timeline": "Mostrar linea del tiempo",
+      "rate": "Calificar"
+    },
+    "alerts": {
+      "emptyRating": "Por favor, selecciona al menos una estrella para calificar.",
+      "successRating": "¡Calificación de {{rating}} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio."
+    }
+  },
+  "adminViewUserProfile": {
+    "labels": {
+      "name": "Nombre:",
+      "email": "Correo:"
+    }
+  },
+  "adminViewProfile": {
+    "title": "Ver Perfil",
+    "labels": {
+      "userId": "ID de Usuario:",
+      "name": "Nombre:",
+      "email": "Correo Electrónico:",
+      "role": "Rol en el sistema:"
+    }
+  },
+"adminViewMonument": {
+    "readonlyMode": "Modo de solo lectura. Los datos no pueden ser modificados.",
+    "labels": {
+      "name": "Nombre del sitio",
+      "phrase": "Frase descriptiva",
+      "category": "Categoría",
+      "legends": "Leyendas",
+      "description": "Texto descriptivo completo",
+      "locationUrl": "URL de ubicación (Maps)",
+      "historicalSources": "Fuentes históricas",
+      "audio": "Archivo de audio",
+      "timeline": "Línea de tiempo"
+    }
+  },
+  "adminUsers": {
+    "admins": "Administradores",
+    "users": "Usuarios",
+    "roleAdmin": "Administrador",
+    "roleUser": "Usuario"
+  },
+  "adminProfile": {
+    "headerTitle": "Perfil",
+    "logout": "Cerrar sesión",
+    "roleAdmin": "Administrador",
+    "settings": {
+      "title": "Configuración",
+      "language": "Idioma seleccionado",
+      "theme": "Tema de la aplicación",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "editProfile": "Modificar perfil"
+    },
+    "about": "Acerca de la aplicación",
+    "deleteAccount": "Eliminar Cuenta",
+    "alerts": {
+      "logoutTitle": "Cerrar sesión",
+      "logoutMessage": "¿Estás seguro de que deseas salir?",
+      "cancel": "Cancelar",
+      "exit": "Salir",
+      "themeTitle": "Tema de la aplicación",
+      "themeMessage": "Elige cómo quieres ver la pantalla",
+      "themeLightOption": "Modo Claro ☀️",
+      "themeDarkOption": "Modo Oscuro 🌙",
+      "deletePromptWeb": "¿Estás seguro de que deseas eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.",
+      "deleteSuccessWeb": "Cuenta eliminada exitosamente. (Simulación de Base de Datos)",
+      "deleteTitle": "Eliminar Cuenta",
+      "deleteMessage": "¿Estás seguro de que deseas eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.",
+      "deleteConfirm": "Sí, Eliminar",
+      "deleteSuccessTitle": "Cuenta eliminada",
+      "deleteSuccessMessage": "Tu cuenta ha sido eliminada exitosamente."
+    }
+  },
+  "adminMonuments": {
+    "noResults": "No se encontraron monumentos.",
+    "alerts": {
+      "deleteSuccessWeb": "El monumento \"{{name}}\" ha sido eliminado.",
+      "deletedTitle": "Eliminado",
+      "deleteSuccess": "El monumento \"{{name}}\" ha sido eliminado.",
+      "deletePromptWeb": "¿Estás seguro de que deseas eliminar permanentemente el monumento \"{{name}}\"?",
+      "deleteTitle": "Eliminar Monumento",
+      "deletePrompt": "¿Estás seguro de que deseas eliminar permanentemente el monumento \"{{name}}\"?",
+      "cancel": "Cancelar",
+      "deleteConfirm": "Sí, Eliminar"
+    }
+  },
+  "adminModifyMonument": {
+    "title": "Modificar monumento",
+    "infoText": "Edita los campos necesarios y presiona \"Guardar\".",
+    "labels": {
+      "name": "Nombre del sitio",
+      "phrase": "Frase descriptiva",
+      "category": "Categoría",
+      "legends": "Leyendas",
+      "description": "Texto descriptivo completo",
+      "locationUrl": "URL de ubicación (Maps)",
+      "historicalSources": "Fuentes históricas",
+      "audioFiles": "Archivos de audio",
+      "timeline": "Línea de tiempo"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "addImages": "+ Agregar Imágenes",
+      "addTimeline": "+ Subir Línea de Tiempo",
+      "addAudio": "+ Subir Audio"
+    },
+    "alerts": {
+      "successMessage": "Los cambios en \"{{name}}\" han sido guardados correctamente.",
+      "successTitle": "Éxito",
+      "accept": "Aceptar"
+    }
+  },
+  "adminListUsers": {
+    "title": "Usuarios",
+    "searchPlaceholder": "Buscar usuario o ID...",
+    "viewProfile": "Ver perfil",
+    "delete": "Eliminar",
+    "alerts": {
+      "deleteSuccessWeb": "Usuario {{username}} eliminado.",
+      "deletedTitle": "Eliminado",
+      "deleteSuccess": "Usuario {{username}} eliminado.",
+      "deletePromptWeb": "¿Eliminar permanentemente a {{username}}?",
+      "deleteTitle": "Eliminar Usuario",
+      "deletePrompt": "¿Eliminar a {{username}}?",
+      "cancel": "Cancelar",
+      "deleteConfirm": "Eliminar"
+    }
+  },
+  "adminListAdmins": {
+    "addAdmin": "Agregar Administrador",
+    "noResults": "No se encontraron resultados.",
+    "alerts": {
+      "deleteSuccessWeb": "El administrador {{username}} ha sido eliminado.",
+      "deletedTitle": "Eliminado",
+      "deleteSuccess": "El administrador {{username}} ha sido eliminado.",
+      "deletePromptWeb": "¿Estás seguro de que deseas eliminar a {{username}}?",
+      "deleteTitle": "Eliminar Cuenta",
+      "deletePrompt": "¿Estás seguro de que deseas eliminar la cuenta de {{username}}?",
+      "cancel": "Cancelar",
+      "deleteConfirm": "Sí, Eliminar"
+    }
+  },
+  "adminDashboard": {
+    "title": "Panel de Administración",
+    "stats": {
+      "monuments": "Monumentos registrados",
+      "users": "Usuarios registrados",
+      "admins": "Administradores"
+    }
+  },
+  "adminAddMonument": {
+    "title": "Agregar monumento",
+    "labels": {
+      "name": "Nombre del sitio",
+      "phrase": "Frase descriptiva",
+      "category": "Categoría",
+      "legends": "Leyendas",
+      "description": "Texto descriptivo completo",
+      "locationUrl": "URL de ubicación (Maps)",
+      "historicalSources": "Fuentes históricas"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "addImages": "+ Agregar Imágenes",
+      "addTimeline": "+ Subir Línea de Tiempo",
+      "addAudio": "+ Subir Audio"
+    },
+    "alerts": {
+      "incompleteTitle": "Campos incompletos",
+      "incompleteMessage": "Por favor, completa los campos obligatorios.",
+      "successTitle": "Éxito",
+      "successMessage": "Monumento \"{{name}}\" guardado correctamente."
+    }
+  },
+    "labels": {
+      "name": "Nombre del monumento",
+      "year": "Año de creación",
+      "description": "Texto descriptivo",
+      "audioFiles": "Archivos de audio",
+      "territoryGuide": "Guía de territorio",
+      "historicalSources": "Fuentes históricas"
+    },
+    "placeholders": {
+      "name": "Ej: Teatro Degollado",
+      "year": "Ej: 1866",
+      "description": "Escribe la historia aquí...",
+      "audioFiles": "Subir archivo .mp3",
+      "territoryGuide": "Subir archivo .pdf / .jpg",
+      "historicalSources": "Libros, sitios web, etc."
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "create": "Crear"
+    },
+  "adminAddAdmin": {
+    "title": "Registro de Administrador",
+    "labels": {
+      "email": "Ingresa tu correo electrónico",
+      "password": "Ingresa tu contraseña",
+      "fullName": "Ingresa nombre completo",
+      "username": "Ingresa nombre de usuario"
+    },
+    "placeholders": {
+      "email": "ejemplo@gmail.com",
+      "password": "********",
+      "fullName": "Juan Pérez",
+      "username": "Juanito_Admin"
+    },
+    "button": "Registrarse",
+    "alerts": {
+      "incompleteWeb": "Por favor, rellena todos los campos.",
+      "incompleteTitle": "Campos incompletos",
+      "incompleteMessage": "Por favor, rellena todos los campos.",
+      "successMessage": "Administrador \"{{username}}\" registrado exitosamente.",
+      "successTitle": "Registro Exitoso",
+      "accept": "Aceptar"
+    }
+  },
+  "addSite": {
+    "searchPlaceholder": "Buscar lugar",
+    "categories": {
+      "Museos": "Museos",
+      "Iglesia": "Iglesias",
+      "Monumentos": "Monumentos",
+      "Otros": "Otros"
+    },
+    "alerts": {
+      "missingTime": "Por favor, selecciona una hora y un minuto."
+    },
+    "modal": {
+      "title": "Selecciona la hora de visita",
+      "hourLabel": "Hora (Formato 24h):",
+      "minuteLabel": "Minutos:",
+      "cancelButton": "Cancelar",
+      "continueButton": "Continuar"
+    }
+  },
+  "about": {
+    "title": "Acerca de Histour",
+    "whatIs": "¿Qué es Histour?",
+    "description": "Histour es una aplicación diseñada para transformar la manera en que exploras lugares históricos. Nuestra app resuelve el problema de la falta de información accesible y guiada, ofreciendo una experiencia inmersiva para descubrir la riqueza cultural de Guadalajara de forma intuitiva.",
+    "version": "Versión",
+    "credits": "Créditos y Licencias",
+    "creditsText": "© 2026 Histour App. Todos los derechos reservados. Este software utiliza librerías de código abierto bajo licencia MIT.",
+    "contact": "Contacto del equipo"
+  },
+  "userProfile": {
+    "headerTitle": "Perfil",
+    "logout": "Cerrar sesión",
+    "favoritePlaces": "Lugares favoritos: {{count}}",
+    "settings": {
+      "title": "Configuración",
+      "language": "Idioma seleccionado",
+      "theme": "Tema de la aplicación",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "editProfile": "Modificar perfil"
+    },
+    "about": "Acerca de la aplicación",
+    "privacyPolicy": "Política de Privacidad",
+    "deleteAccount": "Eliminar Cuenta",
+    "alerts": {
+      "deletePromptWeb": "¿Estás seguro de querer eliminar tu cuenta?",
+      "deleteSuccessWeb": "Cuenta eliminada permanentemente.\nRedireccionando al inicio de sesión...",
+      "deleteTitle": "Eliminar Cuenta",
+      "deletePrompt": "¿Estás seguro de querer eliminar tu cuenta?",
+      "cancel": "Cancelar",
+      "accept": "Aceptar"
+    }
+  },
+  "home": {
+    "searchPlaceholder": "Buscar lugar",
+    "captureButton": "Capturar sitio",
+    "sections": {
+      "categories": "Categorías",
+      "mostVisited": "Más visitados"
+    },
+    "categories": {
+      "museums": "Museos",
+      "churches": "Iglesias",
+      "monuments": "Monumentos",
+      "others": "Otros"
+    },
+    "cathedralTitle": "La Catedral",
+    "defaultSiteDescription": "El monumento religioso y arquitectónico más emblemático de Jalisco, México.",
+    "alerts": {
+      "webWarning": "La función de escáner está optimizada para la app móvil. Abriendo vista de prueba...",
+      "permissionTitle": "Permiso de Cámara",
+      "permissionMessage": "\"Histour\" necesita acceder a tu cámara para usar el escáner inteligente de monumentos. ¿Permitir acceso?",
+      "deny": "Denegar",
+      "allow": "Permitir",
+      "deniedTitle": "Permiso denegado",
+      "deniedMessage": "Recuerda que puedes habilitarlo más tarde en tu configuración."
+    }
+  },
+  "favorites": {
+    "title": "Favoritos",
+    "emptyText": "Aún no tienes lugares favoritos. ¡Explora y agrega algunos!",
+    "description": "Explora la increíble historia, arquitectura y legado cultural de {{title}}, un sitio emblemático que forma parte de la identidad de la región."
+  },
+  "calendar": {
+    "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "days": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+    "itinerary": "Itinerario",
+    "noEvents": "No tienes lugares agendados para este día.",
+    "addButton": "Agregar sitio",
+    "defaultAddress": "Dirección Centro Histórico"
+  }
+}

@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 // 👇 Agregamos más usuarios de prueba para forzar a que aparezca la barra de scroll 👇
 const MOCK_ADMINS = [
@@ -19,6 +21,9 @@ const MOCK_ADMINS = [
 export default function AdminListAdminsScreen() {
   const { colors, theme } = useTheme();
   
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [menuActivo, setMenuActivo] = useState<string | null>(null);
   const [admins, setAdmins] = useState(MOCK_ADMINS);
@@ -43,20 +48,20 @@ export default function AdminListAdminsScreen() {
 
     const ejecutarEliminacion = () => {
       setAdmins(prev => prev.filter(admin => admin.id !== id));
-      if (Platform.OS === 'web') alert(`El administrador ${username} ha sido eliminado.`);
-      else Alert.alert('Eliminado', `El administrador ${username} ha sido eliminado.`);
+      if (Platform.OS === 'web') alert(t('adminListAdmins.alerts.deleteSuccessWeb', { username }));
+      else Alert.alert(t('adminListAdmins.alerts.deletedTitle'), t('adminListAdmins.alerts.deleteSuccess', { username }));
     };
 
     if (Platform.OS === 'web') {
-      const confirmar = window.confirm(`¿Estás seguro de que deseas eliminar a ${username}?`);
+      const confirmar = window.confirm(t('adminListAdmins.alerts.deletePromptWeb', { username }));
       if (confirmar) ejecutarEliminacion();
     } else {
       Alert.alert(
-        'Eliminar Cuenta',
-        `¿Estás seguro de que deseas eliminar la cuenta de ${username}?`,
+        t('adminListAdmins.alerts.deleteTitle'),
+        t('adminListAdmins.alerts.deletePrompt', { username }),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Sí, Eliminar', style: 'destructive', onPress: ejecutarEliminacion }
+          { text: t('adminListAdmins.alerts.cancel'), style: 'cancel' },
+          { text: t('adminListAdmins.alerts.deleteConfirm'), style: 'destructive', onPress: ejecutarEliminacion }
         ]
       );
     }
@@ -68,7 +73,7 @@ export default function AdminListAdminsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/admin-users')}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Administradores</Text>
+        <Text style={styles.headerTitle}>{t('adminUsers.admins')}</Text>
       </View>
 
       <View style={styles.mainContent}>
@@ -76,10 +81,15 @@ export default function AdminListAdminsScreen() {
           
           <View style={[styles.searchContainer, { borderBottomColor: colors.border }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
-            <TextInput style={[styles.searchInput, { color: colors.text }]} placeholder="Buscar por nombre o ID..." placeholderTextColor={colors.textSecondary} value={searchQuery} onChangeText={setSearchQuery} />
+            <TextInput 
+              style={[styles.searchInput, { color: colors.text }]} 
+              placeholder={t('admin.buscar')} 
+              placeholderTextColor={colors.textSecondary} 
+              value={searchQuery} 
+              onChangeText={setSearchQuery} 
+            />
           </View>
 
-          {/* 👇 Aquí forzamos el indicador de scroll para que se muestre cuando la lista crezca 👇 */}
           <ScrollView 
             style={styles.innerScroll} 
             showsVerticalScrollIndicator={true} 
@@ -99,11 +109,11 @@ export default function AdminListAdminsScreen() {
                 {menuActivo === admin.id && (
                   <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#162133', borderColor: colors.border }]}>
                     <TouchableOpacity style={styles.menuItem} onPress={() => handleVerPerfil(admin.username)}>
-                      <Text style={[styles.menuText, { color: colors.text }]}>Ver perfil</Text>
+                      <Text style={[styles.menuText, { color: colors.text }]}>{t('adminListUsers.viewProfile')}</Text>
                     </TouchableOpacity>
                     <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
                     <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(admin.id, admin.username)}>
-                      <Text style={styles.menuTextDanger}>Eliminar</Text>
+                      <Text style={styles.menuTextDanger}>{t('adminListUsers.delete')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -111,13 +121,13 @@ export default function AdminListAdminsScreen() {
             ))}
             
             {administradoresFiltrados.length === 0 && (
-              <Text style={[styles.noResults, { color: colors.textSecondary }]}>No se encontraron resultados.</Text>
+              <Text style={[styles.noResults, { color: colors.textSecondary }]}>{t('adminListAdmins.noResults')}</Text>
             )}
           </ScrollView>
 
           <TouchableOpacity style={[styles.addButton, { borderTopColor: colors.border }]} onPress={() => router.push('/admin-add-admin')}>
             <Ionicons name="add-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.addButtonText, { color: colors.text }]}>Agregar Administrador</Text>
+            <Text style={[styles.addButtonText, { color: colors.text }]}>{t('adminListAdmins.addAdmin')}</Text>
           </TouchableOpacity>
         </View>
       </View>

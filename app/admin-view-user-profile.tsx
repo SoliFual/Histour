@@ -3,9 +3,14 @@ import { router } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function AdminViewUserProfileScreen() {
   const { colors, theme } = useTheme();
+  
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -24,11 +29,13 @@ export default function AdminViewUserProfileScreen() {
 
       <View style={styles.infoContainer}>
         <View style={styles.fieldWrapper}>
-          <Text style={[styles.fieldLabel, { color: colors.primary }]}>Nombre:</Text>
+          {/* Traducimos la etiqueta */}
+          <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('adminViewUserProfile.labels.name')}</Text>
           <Text style={[styles.fieldValue, { color: colors.primary }]}>Carlos Martínez Ruiz</Text>
         </View>
         <View style={styles.fieldWrapper}>
-          <Text style={[styles.fieldLabel, { color: colors.primary }]}>Correo:</Text>
+          {/* Traducimos la etiqueta */}
+          <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('adminViewUserProfile.labels.email')}</Text>
           <Text style={[styles.fieldValue, { color: colors.primary }]}>carlos.dev@histour.mx</Text>
         </View>
       </View>

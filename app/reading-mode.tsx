@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function ReadingModeScreen() {
   const { colors, theme } = useTheme();
@@ -11,24 +13,28 @@ export default function ReadingModeScreen() {
   // Atrapamos la información del sitio
   const { title, image, legends, fullText } = useLocalSearchParams();
 
-  // Estados interactivos para el botón de me gusta y las estrellas
-  // 👇 Usamos el contexto global 👇
+  // Usamos el contexto global
   const { isFavorite, toggleFavorite } = useFavorites();
   
   // Verificamos si este lugar específico está en la lista
   const isCurrentFavorite = isFavorite(title as string);
   const [rating, setRating] = useState(0);
-  // 👇 Función que simula el envío a la base de datos 👇
+
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
+  // Función que simula el envío a la base de datos
   const enviarCalificacion = () => {
     if (rating === 0) {
-      alert("Por favor, selecciona al menos una estrella para calificar.");
+      // Usamos el traductor para la alerta de error
+      alert(t('readingMode.alerts.emptyRating'));
       return;
     }
 
     // AQUÍ IRÁ TU CÓDIGO DE BASE DE DATOS EN EL FUTURO. 
-    // Ejemplo: supabase.from('calificaciones').insert({ sitio: title, estrellas: rating })
     
-    alert(`¡Calificación de ${rating} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio.`);
+    // Usamos el traductor inyectando la variable "rating"
+    alert(t('readingMode.alerts.successRating', { rating }));
     
     // Opcional: regresar las estrellas a 0 después de calificar
     // setRating(0); 
@@ -45,7 +51,7 @@ export default function ReadingModeScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerLeft}>
           <Ionicons name="arrow-back" size={28} color={COLOR_LIGHT_BLUE} />
-          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>Modo Lectura</Text>
+          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>{t('readingMode.title')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => toggleFavorite({ title, image })}>
@@ -80,13 +86,12 @@ export default function ReadingModeScreen() {
           onPress={() => router.push({
             pathname: '/timeline',
             params: {
-              title: title, // Le pasamos el nombre del lugar
-              // Simulamos la imagen de la línea de tiempo que luego vendrá de tu BD
+              title: title, 
               timelineImage: 'https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=600&auto=format&fit=crop'
             }
           })}
         >
-          <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>Mostrar linea del tiempo</Text>
+          <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>{t('readingMode.buttons.timeline')}</Text>
         </TouchableOpacity>
 
         {/* 6. SECCIÓN DE CALIFICACIÓN */}
@@ -107,10 +112,9 @@ export default function ReadingModeScreen() {
 
          <TouchableOpacity 
             style={[styles.rateButton, { borderColor: COLOR_LIGHT_BLUE }]}
-            // 👇 Conectamos el botón con la función que creamos 👇
             onPress={enviarCalificacion}
           >
-            <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>Calificar</Text>
+            <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>{t('readingMode.buttons.rate')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -122,7 +126,7 @@ export default function ReadingModeScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
-    paddingTop: 40, // Espacio para la barra de estado
+    paddingTop: 40, 
   },
   header: {
     flexDirection: 'row',

@@ -2,8 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function CameraPlaceholderScreen() {
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       
@@ -24,11 +29,11 @@ export default function CameraPlaceholderScreen() {
       {/* TEXTO INFORMATIVO PARA LA ETAPA 1 */}
       <View style={styles.textContainer}>
         <Ionicons name="scan-outline" size={48} color="#4E97D1" style={styles.icon} />
-        <Text style={styles.title}>Modo Escáner Inteligente</Text>
+        <Text style={styles.title}>{t('camera.title')}</Text>
         <Text style={styles.description}>
-          (Fase de Desarrollo)
+          {t('camera.subtitle')}
           {'\n\n'}
-          Aquí se activará el hardware de tu cámara. En etapas posteriores, este módulo se conectará con la API de Google Cloud Vision para identificar la arquitectura y monumentos frente a ti.
+          {t('camera.description')}
         </Text>
       </View>
       
@@ -60,7 +65,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 50,
     height: 50,
-    borderColor: '#4E97D1', // Azul claro de tu diseño
+    borderColor: '#4E97D1', 
   },
   topLeft: { 
     top: 0, left: 0, 

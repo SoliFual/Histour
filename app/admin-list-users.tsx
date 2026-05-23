@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 // Datos de prueba para usuarios (Agregamos varios para que se vea el scroll)
 const MOCK_USERS = [
@@ -17,6 +19,10 @@ const MOCK_USERS = [
 
 export default function AdminListUsersScreen() {
   const { colors, theme } = useTheme();
+  
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [menuActivo, setMenuActivo] = useState<string | null>(null);
   const [users, setUsers] = useState(MOCK_USERS);
@@ -34,16 +40,16 @@ export default function AdminListUsersScreen() {
     setMenuActivo(null);
     const ejecutar = () => {
       setUsers(prev => prev.filter(u => u.id !== id));
-      if (Platform.OS === 'web') alert(`Usuario ${username} eliminado.`);
-      else Alert.alert('Eliminado', `Usuario ${username} eliminado.`);
+      if (Platform.OS === 'web') alert(t('adminListUsers.alerts.deleteSuccessWeb', { username }));
+      else Alert.alert(t('adminListUsers.alerts.deletedTitle'), t('adminListUsers.alerts.deleteSuccess', { username }));
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm(`¿Eliminar permanentemente a ${username}?`)) ejecutar();
+      if (window.confirm(t('adminListUsers.alerts.deletePromptWeb', { username }))) ejecutar();
     } else {
-      Alert.alert('Eliminar Usuario', `¿Eliminar a ${username}?`, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: ejecutar }
+      Alert.alert(t('adminListUsers.alerts.deleteTitle'), t('adminListUsers.alerts.deletePrompt', { username }), [
+        { text: t('adminListUsers.alerts.cancel'), style: 'cancel' },
+        { text: t('adminListUsers.alerts.deleteConfirm'), style: 'destructive', onPress: ejecutar }
       ]);
     }
   };
@@ -54,7 +60,7 @@ export default function AdminListUsersScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/admin-users')}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Usuarios</Text>
+        <Text style={styles.headerTitle}>{t('adminListUsers.title')}</Text>
       </View>
 
       <View style={styles.mainContent}>
@@ -63,7 +69,7 @@ export default function AdminListUsersScreen() {
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput 
                 style={[styles.searchInput, { color: colors.text }]} 
-                placeholder="Buscar usuario o ID..." 
+                placeholder={t('adminListUsers.searchPlaceholder')} 
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -88,11 +94,11 @@ export default function AdminListUsersScreen() {
                 {menuActivo === u.id && (
                   <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFF' : '#162133', borderColor: colors.border }]}>
                     <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuActivo(null); router.push('/admin-view-user-profile'); }}>
-                      <Text style={{ color: colors.text }}>Ver perfil</Text>
+                      <Text style={{ color: colors.text }}>{t('adminListUsers.viewProfile')}</Text>
                     </TouchableOpacity>
                     <View style={{ height: 1, backgroundColor: colors.border }} />
                     <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(u.id, u.username)}>
-                      <Text style={{ color: '#FF4C4C' }}>Eliminar</Text>
+                      <Text style={{ color: '#FF4C4C' }}>{t('adminListUsers.delete')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}

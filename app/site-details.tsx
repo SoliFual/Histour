@@ -3,13 +3,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const { height } = Dimensions.get('window');
 
 export default function SiteDetailsScreen() {
   const { colors } = useTheme();
   
-  // 👇 Atrapamos los datos que nos mande cualquier pantalla anterior 👇
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+  
+  // Atrapamos los datos que nos mande cualquier pantalla anterior
   const { title, image, description } = useLocalSearchParams();
 
   return (
@@ -32,12 +37,12 @@ export default function SiteDetailsScreen() {
           </TouchableOpacity>
 
           <View style={styles.contentContainer}>
-            {/* 🏷️ TÍTULO (Simulando Bree Serif 150px) 🏷️ */}
+            {/* 🏷️ TÍTULO (Viene de la BD, no se traduce aquí) */}
             <Text style={styles.title}>{title}</Text>
 
-            {/* 📝 DESCRIPCIÓN (Simulando Bree Serif 50px) 📝 */}
+            {/* 📝 DESCRIPCIÓN (Si no hay descripción, usa el texto de respaldo traducido) */}
             <Text style={styles.description}>
-              {description || "Este monumento es una pieza fundamental de la historia de nuestra ciudad, representando la arquitectura y cultura de su época."}
+              {description || t('siteDetails.defaultDescription')}
             </Text>
 
             {/* 🔘 BOTONES DE MODO 🔘 */}
@@ -49,14 +54,14 @@ export default function SiteDetailsScreen() {
                   params: {
                     title: title,
                     image: image,
-                    // Estos datos después vendrán de tu base de datos real:
                     legends: "Leyendas: Existe la creencia popular de una red de túneles bajo el templo, supuestamente utilizados durante la Guerra Cristera.",
                     fullText: "La Catedral Metropolitana de Guadalajara, dedicada a la Asunción de María, es un emblema de la ciudad cuya construcción inició en 1561 por orden de Felipe II y concluyó en 1618. Ha resistido múltiples terremotos, destacando la reconstrucción de sus icónicas torres neogóticas en 1854. Combina estilos barroco, morisco y neoclásico."
                   }
                 })}
               >
                 <Ionicons name="book-outline" size={24} color="#FFFFFF" style={styles.icon} />
-                <Text style={styles.buttonText}>Modo lectura</Text>
+                {/* 3. Traducimos el botón de lectura */}
+                <Text style={styles.buttonText}>{t('siteDetails.readingMode')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -66,13 +71,13 @@ export default function SiteDetailsScreen() {
                   params: {
                     title: title,
                     image: image,
-                    // Simulamos una segunda imagen desde la base de datos
                     image2: 'https://images.unsplash.com/photo-1548625361-ec85d5809eb3?q=80&w=600&auto=format&fit=crop'
                   }
                 })}
               >
                 <Ionicons name="headset-outline" size={24} color="#FFFFFF" style={styles.icon} />
-                <Text style={styles.buttonText}>Modo audioguía</Text>
+                {/* 4. Traducimos el botón de audioguía */}
+                <Text style={styles.buttonText}>{t('siteDetails.audioMode')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -88,7 +93,7 @@ const styles = StyleSheet.create({
   backgroundImage: { width: '100%', height: '100%' },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)', // Oscurece un poco la imagen de fondo
+    backgroundColor: 'rgba(0,0,0,0.35)', 
     paddingHorizontal: 30,
     justifyContent: 'space-between',
     paddingTop: 60,
@@ -104,7 +109,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 55, // Tamaño proporcional para móvil
+    fontSize: 55, 
     fontWeight: 'bold',
     fontFamily: 'serif',
     marginBottom: 10,
@@ -123,7 +128,7 @@ const styles = StyleSheet.create({
   },
   modeButton: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.25)', // Botón traslúcido
+    backgroundColor: 'rgba(255,255,255,0.25)', 
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 30,

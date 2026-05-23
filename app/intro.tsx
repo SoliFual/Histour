@@ -1,32 +1,37 @@
 import { router } from 'expo-router';
 import React from 'react';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function IntroScreen() {
   
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const handleIngresar = () => {
     // Le agregamos "/index" al final para que vaya directo al archivo del Login
-   router.replace('/login'); //
+   router.replace('/login'); 
   };
 
   return (
-    // Reemplazamos el View principal por el ImageBackground
     <ImageBackground
       source={require('../assets/images/viaje.png')} 
       style={styles.background}
-      resizeMode="cover" // Esto asegura que la imagen se estire por toda la pantalla
+      resizeMode="cover" 
     >
       
       {/* Sección de textos y botón flotando sobre el fondo */}
       <View style={styles.textSection}>
+        {/* El nombre de la app se queda fijo */}
         <Text style={styles.title}>HISTOUR</Text>
-        <Text style={styles.subtitle}>App de historia y turismo</Text>
+        <Text style={styles.subtitle}>{t('intro.subtitle')}</Text>
         <Text style={styles.description}>
-          Porque viajar no es solo llegar a un lugar, es entender la historia que tiene que contarnos.
+          {t('intro.description')}
         </Text>
         
         <TouchableOpacity style={styles.button} onPress={handleIngresar}>
-          <Text style={styles.buttonText}>Ingresar</Text>
+          <Text style={styles.buttonText}>{t('intro.button')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -34,7 +39,6 @@ export default function IntroScreen() {
   );
 }
 
-// El maquillaje actualizado
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -44,7 +48,7 @@ const styles = StyleSheet.create({
   textSection: {
     paddingHorizontal: 40,
     alignItems: 'flex-start',
-    marginTop: 40,// Empujamos el texto hacia abajo para que no pegue con el borde superior
+    marginTop: 40,
   },
   title: {
     fontSize: 45,

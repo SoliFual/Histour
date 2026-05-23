@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 // VALORES INICIALES DE LA "BASE DE DATOS"
 const valoresIniciales = {
@@ -14,6 +16,9 @@ const valoresIniciales = {
 
 export default function EditProfileScreen() {
   const { colors, theme } = useTheme();
+  
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   // EL ANTÍDOTO CONTRA EL OJO DE EDGE
   useEffect(() => {
@@ -51,22 +56,21 @@ export default function EditProfileScreen() {
     router.replace('/login');
   };
 
-  // FUNCIÓN ACTUALIZADA PARA SOLICITAR PERMISO DE GALERÍA
   const handleCambiarFoto = () => {
     if (Platform.OS === 'web') {
-      const permiso = window.confirm('"Histour" quiere acceder a tu galería de fotos para cambiar tu foto de perfil. ¿Permitir?');
+      const permiso = window.confirm(t('editProfile.alerts.galleryPromptWeb'));
       if (permiso) {
-        alert('Abriendo galería...');
+        alert(t('editProfile.alerts.galleryOpeningWeb'));
       }
     } else {
       Alert.alert(
-        'Acceso a Fotos',
-        '"Histour" quiere acceder a tu galería de fotos para cambiar tu foto de perfil.',
+        t('editProfile.alerts.galleryTitle'),
+        t('editProfile.alerts.galleryPrompt'),
         [
-          { text: 'Denegar', style: 'cancel' },
+          { text: t('editProfile.alerts.deny'), style: 'cancel' },
           { 
-            text: 'Permitir', 
-            onPress: () => Alert.alert('Galería', 'Abriendo galería de fotos...') 
+            text: t('editProfile.alerts.allow'), 
+            onPress: () => Alert.alert(t('editProfile.alerts.galleryTitle'), t('editProfile.alerts.galleryOpening')) 
           }
         ]
       );
@@ -81,16 +85,16 @@ export default function EditProfileScreen() {
 
     const partesNombre = nombre.trim().split(/\s+/);
     if (partesNombre.length < 2) {
-      setErrorNombre('Debes ingresar al menos tu nombre y un apellido.');
+      setErrorNombre(t('editProfile.errors.nameMissing'));
       todoCorrecto = false;
     }
 
     if (password !== valoresIniciales.password) {
       if (password.length < 8) {
-        setErrorPassword('La nueva contraseña debe tener mínimo 8 caracteres.');
+        setErrorPassword(t('editProfile.errors.passwordShort'));
         todoCorrecto = false;
       } else if (password !== confirmPassword) {
-        setErrorConfirmPassword('Las contraseñas no coinciden, verifícalas.');
+        setErrorConfirmPassword(t('editProfile.errors.passwordMismatch'));
         todoCorrecto = false;
       }
     }
@@ -105,31 +109,31 @@ export default function EditProfileScreen() {
 
     if (!haCambiadoAlgo) {
       if (Platform.OS === 'web') {
-        alert('No has modificado ningún dato todavía.');
+        alert(t('editProfile.alerts.noChangesMessage'));
       } else {
-        Alert.alert('Sin cambios', 'No has modificado ningún dato todavía.');
+        Alert.alert(t('editProfile.alerts.noChangesTitle'), t('editProfile.alerts.noChangesMessage'));
       }
       return;
     }
 
     if (Platform.OS === 'web') {
-      const deAcuerdo = window.confirm('¿Estás seguro de que deseas guardar los cambios realizados en tu perfil?');
+      const deAcuerdo = window.confirm(t('editProfile.alerts.confirmSavePrompt'));
       if (deAcuerdo) {
-        alert('¡Perfil Actualizado!\nLos cambios se han guardado exitosamente.');
+        alert(t('editProfile.alerts.saveSuccessWeb'));
         router.back();
       }
     } else {
       Alert.alert(
-        'Confirmar Cambios',
-        '¿Estás seguro de que deseas guardar los cambios realizados en tu perfil?',
+        t('editProfile.alerts.confirmSaveTitle'),
+        t('editProfile.alerts.confirmSavePrompt'),
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('editProfile.alerts.cancel'), style: 'cancel' },
           {
-            text: 'Guardar',
+            text: t('editProfile.alerts.save'),
             onPress: () => {
               Alert.alert(
-                '¡Perfil Actualizado!', 
-                'Los cambios se han guardado exitosamente.',
+                t('editProfile.alerts.saveSuccessTitle'), 
+                t('editProfile.alerts.saveSuccessMessage'),
                 [{ text: 'OK', onPress: () => router.back() }] 
               );
             },
@@ -144,13 +148,12 @@ export default function EditProfileScreen() {
       
       {/* ENCABEZADO */}
       <View style={styles.header}>
-        {/* 👇 AQUÍ ESTÁ LA CORRECCIÓN: AHORA USA router.back() 👇 */}
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
-          <Text style={[styles.headerTitle, { color: colors.primary }]}>Editar Perfil</Text>
+          <Text style={[styles.headerTitle, { color: colors.primary }]}>{t('editProfile.headerTitle')}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleLogout}>
-          <Text style={[styles.logoutText, { color: colors.primary }]}>Cerrar sesión</Text>
+          <Text style={[styles.logoutText, { color: colors.primary }]}>{t('editProfile.logout')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -176,12 +179,12 @@ export default function EditProfileScreen() {
         
         <View style={styles.fieldWrapper}>
           <View style={styles.fieldRow}>
-            <Text style={[styles.fieldLabel, { color: colors.primary }]}>Nombre:</Text>
+            <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('editProfile.labels.name')}</Text>
             <TextInput 
               style={[styles.fieldInput, { color: colors.primary }]} 
               value={nombre} 
               onChangeText={setNombre} 
-              placeholder="Ej. Sofía López"
+              placeholder={t('editProfile.placeholders.name')}
               placeholderTextColor="#999"
             />
             <Ionicons name="pencil" size={18} color={colors.primary} />
@@ -191,7 +194,7 @@ export default function EditProfileScreen() {
 
         <View style={styles.fieldWrapper}>
           <View style={styles.fieldRow}>
-            <Text style={[styles.fieldLabel, { color: colors.primary }]}>Correo Electrónico:</Text>
+            <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('editProfile.labels.email')}</Text>
             <TextInput 
               style={[styles.fieldInput, { color: colors.primary }]} 
               value={correo} 
@@ -205,7 +208,7 @@ export default function EditProfileScreen() {
 
         <View style={styles.fieldWrapper}>
           <View style={styles.fieldRow}>
-            <Text style={[styles.fieldLabel, { color: colors.primary }]}>Contraseña:</Text>
+            <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('editProfile.labels.password')}</Text>
             <TextInput 
               style={[styles.fieldInput, { color: colors.primary }]} 
               value={password} 
@@ -224,13 +227,13 @@ export default function EditProfileScreen() {
         {password !== valoresIniciales.password && (
           <View style={styles.fieldWrapper}>
             <View style={styles.fieldRow}>
-              <Text style={[styles.fieldLabel, { color: colors.primary }]}>Confirmar Contraseña:</Text>
+              <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('editProfile.labels.confirmPassword')}</Text>
               <TextInput 
                 style={[styles.fieldInput, { color: colors.primary }]} 
                 value={confirmPassword} 
                 onChangeText={setConfirmPassword} 
                 secureTextEntry={!showConfirmPassword} 
-                placeholder="Repite la nueva contraseña"
+                placeholder={t('editProfile.placeholders.confirmPassword')}
                 placeholderTextColor="#999"
                 autoCapitalize="none"
               />
@@ -244,7 +247,7 @@ export default function EditProfileScreen() {
         )}
 
         <TouchableOpacity style={styles.saveButton} onPress={handleGuardarCambios}>
-          <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+          <Text style={styles.saveButtonText}>{t('editProfile.saveButton')}</Text>
         </TouchableOpacity>
 
       </View>

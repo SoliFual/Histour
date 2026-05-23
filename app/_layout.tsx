@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { FavoritesProvider } from '../context/FavoritesContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import '../i18n'; // Esto enciende el traductor al abrir la app
 
 export default function RootLayout() {
   return (

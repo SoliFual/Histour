@@ -3,9 +3,14 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function AdminAddAdminScreen() {
   const { colors, theme } = useTheme();
+
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   // ESTADOS PARA LOS CAMPOS DEL FORMULARIO
   const [email, setEmail] = useState('');
@@ -17,23 +22,22 @@ export default function AdminAddAdminScreen() {
   // FUNCIÓN PARA SIMULAR EL REGISTRO
   const handleRegistrar = () => {
     if (!email || !password || !fullName || !username) {
-      if (Platform.OS === 'web') alert('Por favor, rellena todos los campos.');
-      else Alert.alert('Campos incompletos', 'Por favor, rellena todos los campos.');
+      if (Platform.OS === 'web') alert(t('adminAddAdmin.alerts.incompleteWeb'));
+      else Alert.alert(t('adminAddAdmin.alerts.incompleteTitle'), t('adminAddAdmin.alerts.incompleteMessage'));
       return;
     }
 
-    const mensajeExito = `Administrador "${username}" registrado exitosamente.`;
+    // Inyectamos el nombre de usuario
+    const mensajeExito = t('adminAddAdmin.alerts.successMessage', { username });
 
     if (Platform.OS === 'web') {
       alert(mensajeExito);
-      // 👇 Redirige a la gestión general de usuarios
       router.replace('/admin-users'); 
     } else {
       Alert.alert(
-        'Registro Exitoso',
+        t('adminAddAdmin.alerts.successTitle'),
         mensajeExito,
-        // 👇 Redirige a la gestión general de usuarios
-        [{ text: 'Aceptar', onPress: () => router.replace('/admin-users') }]
+        [{ text: t('adminAddAdmin.alerts.accept'), onPress: () => router.replace('/admin-users') }]
       );
     }
   };
@@ -43,11 +47,10 @@ export default function AdminAddAdminScreen() {
       
       {/* ENCABEZADO AZUL */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        {/* 👇 Ahora la flechita apunta a /admin-users 👇 */}
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/admin-users')}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Registro de Administrador</Text>
+        <Text style={styles.headerTitle}>{t('adminAddAdmin.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -59,6 +62,7 @@ export default function AdminAddAdminScreen() {
             style={styles.logoImage}
             resizeMode="contain" 
           />
+          {/* El nombre de la app NO se traduce */}
           <Text style={[styles.logoText, { color: colors.primary }]}>HISTOUR</Text>
         </View>
 
@@ -67,11 +71,11 @@ export default function AdminAddAdminScreen() {
           
           {/* CAMPO: CORREO */}
           <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Ingresa tu correo electrónico</Text>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddAdmin.labels.email')}</Text>
             <View style={[styles.inputContainer, { borderBottomColor: colors.primary }]}>
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="ejemplo@gmail.com"
+                placeholder={t('adminAddAdmin.placeholders.email')}
                 placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
@@ -84,11 +88,11 @@ export default function AdminAddAdminScreen() {
 
           {/* CAMPO: CONTRASEÑA */}
           <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Ingresa tu contraseña</Text>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddAdmin.labels.password')}</Text>
             <View style={[styles.inputContainer, { borderBottomColor: colors.primary }]}>
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="********"
+                placeholder={t('adminAddAdmin.placeholders.password')}
                 placeholderTextColor="#999"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -102,11 +106,11 @@ export default function AdminAddAdminScreen() {
 
           {/* CAMPO: NOMBRE COMPLETO */}
           <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Ingresa nombre completo</Text>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddAdmin.labels.fullName')}</Text>
             <View style={[styles.inputContainer, { borderBottomColor: colors.primary }]}>
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="Juan Pérez"
+                placeholder={t('adminAddAdmin.placeholders.fullName')}
                 placeholderTextColor="#999"
                 value={fullName}
                 onChangeText={setFullName}
@@ -117,11 +121,11 @@ export default function AdminAddAdminScreen() {
 
           {/* CAMPO: NOMBRE DE USUARIO */}
           <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Ingresa nombre de usuario</Text>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddAdmin.labels.username')}</Text>
             <View style={[styles.inputContainer, { borderBottomColor: colors.primary }]}>
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="Juanito_Admin"
+                placeholder={t('adminAddAdmin.placeholders.username')}
                 placeholderTextColor="#999"
                 value={username}
                 onChangeText={setUsername}
@@ -133,7 +137,7 @@ export default function AdminAddAdminScreen() {
 
           {/* BOTÓN DE REGISTRO */}
           <TouchableOpacity style={[styles.registerButton, { backgroundColor: colors.primary }]} onPress={handleRegistrar}>
-            <Text style={styles.registerButtonText}>Registrarse</Text>
+            <Text style={styles.registerButtonText}>{t('adminAddAdmin.button')}</Text>
           </TouchableOpacity>
 
         </View>

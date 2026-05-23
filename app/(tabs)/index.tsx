@@ -1,34 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // 1. Importamos el traductor
 import { Alert, Image, ImageBackground, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../../context/ThemeContext'; // Importar el tema
+import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeScreen() {
-  const { colors, theme } = useTheme(); // Usar el tema
+  const { colors, theme } = useTheme();
+  const { t } = useTranslation(); // 2. Activamos el traductor
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 👇 Función SIMULADA para el botón de la cámara (Etapa 1) 👇
   const handleAbrirCamara = () => {
     if (Platform.OS === 'web') {
-      alert('La función de escáner está optimizada para la app móvil. Abriendo vista de prueba...');
+      alert(t('home.alerts.webWarning'));
       router.push('/camera');
       return;
     }
 
-    // Simulamos la petición de permisos de React Native
     Alert.alert(
-      'Permiso de Cámara (Simulación)',
-      '"Histour" necesita acceder a tu cámara para usar el escáner inteligente de monumentos. ¿Permitir acceso?',
+      t('home.alerts.permissionTitle'),
+      t('home.alerts.permissionMessage'),
       [
         { 
-          text: 'Denegar', 
+          text: t('home.alerts.deny'), 
           style: 'cancel',
-          onPress: () => Alert.alert('Permiso denegado', 'Recuerda que puedes habilitarlo más tarde en tu configuración.')
+          onPress: () => Alert.alert(t('home.alerts.deniedTitle'), t('home.alerts.deniedMessage'))
         },
         { 
-          text: 'Permitir', 
-          onPress: () => router.push('/camera') // Nos lleva a la pantalla oscura de prueba
+          text: t('home.alerts.allow'), 
+          onPress: () => router.push('/camera') 
         }
       ]
     );
@@ -37,7 +37,6 @@ export default function HomeScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       
-      {/* 1. HEADER */}
       <View style={styles.headerContainer}>
         <Image source={require('../../assets/images/header_design.png')} style={styles.headerImageBackground} resizeMode="cover" />
         <View style={styles.headerOverlayContent}>
@@ -48,7 +47,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* 2. BARRA DE BÚSQUEDA (Convertida en botón hacia search-site) */}
       <TouchableOpacity 
         style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.primary }]}
         onPress={() => router.push('/search-site')}
@@ -56,58 +54,44 @@ export default function HomeScreen() {
       >
         <Ionicons name="search-outline" size={20} color={colors.primary} style={styles.searchIcon} />
         <Text style={[styles.searchInput, { color: theme === 'light' ? '#A0A0A0' : '#888888', alignSelf: 'center' }]}>
-          Buscar lugar
+          {t('home.searchPlaceholder')}
         </Text>
       </TouchableOpacity>
 
-      {/* 3. RECTÁNGULO AZUL CON BOTÓN DE CÁMARA */}
       <View style={[styles.blueBand, { backgroundColor: colors.primary }]}>
         <TouchableOpacity 
           style={[styles.captureButton, { backgroundColor: colors.card }]}
-          onPress={handleAbrirCamara} // 👈 Aquí conectamos la alerta de permisos
+          onPress={handleAbrirCamara}
           activeOpacity={0.8}
         >
           <Ionicons name="camera" size={50} color={colors.primary} />
-          <Text style={[styles.captureText, { color: colors.primary }]}>Capturar sitio</Text>
+          <Text style={[styles.captureText, { color: colors.primary }]}>{t('home.captureButton')}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 4. SECCIÓN INFERIOR */}
       <View style={[styles.whiteContentContainer, { backgroundColor: colors.background }]}>
         
-        <Text style={styles.sectionTitle}>Categorías</Text>
+        <Text style={styles.sectionTitle}>{t('home.sections.categories')}</Text>
         <View style={styles.categoriesRow}>
-          <TouchableOpacity 
-            style={styles.categoryItem}
-            onPress={() => router.push('/category-museos')}
-          >
+          <TouchableOpacity style={styles.categoryItem} onPress={() => router.push('/category-museos')}>
             <Image source={require('../../assets/images/cat_museos.png')} style={styles.categoryIconImage} resizeMode="contain" />
-            <Text style={[styles.categoryLabel, { color: colors.primary }]}>Museos</Text>
+            <Text style={[styles.categoryLabel, { color: colors.primary }]}>{t('home.categories.museums')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.categoryItem}
-            onPress={() => router.push('/category-iglesias')}
-          >
+          <TouchableOpacity style={styles.categoryItem} onPress={() => router.push('/category-iglesias')}>
             <Image source={require('../../assets/images/cat_iglesias.png')} style={styles.categoryIconImage} resizeMode="contain" />
-            <Text style={[styles.categoryLabel, { color: colors.primary }]}>Iglesias</Text>
+            <Text style={[styles.categoryLabel, { color: colors.primary }]}>{t('home.categories.churches')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.categoryItem}
-            onPress={() => router.push('/category-monumentos')}
-          >
+          <TouchableOpacity style={styles.categoryItem} onPress={() => router.push('/category-monumentos')}>
             <Image source={require('../../assets/images/cat_monumentos.png')} style={styles.categoryIconImage} resizeMode="contain" />
-            <Text style={[styles.categoryLabel, { color: colors.primary }]}>Monumentos</Text>
+            <Text style={[styles.categoryLabel, { color: colors.primary }]}>{t('home.categories.monuments')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.categoryItem}
-            onPress={() => router.push('/category-otros')}
-          >
+          <TouchableOpacity style={styles.categoryItem} onPress={() => router.push('/category-otros')}>
             <Image source={require('../../assets/images/cat_mas.png')} style={styles.categoryIconImage} resizeMode="contain" />
-            <Text style={[styles.categoryLabel, { color: colors.primary }]}>Otros</Text>
+            <Text style={[styles.categoryLabel, { color: colors.primary }]}>{t('home.categories.others')}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Más visitados</Text>
+        <Text style={styles.sectionTitle}>{t('home.sections.mostVisited')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           <TouchableOpacity 
             style={styles.placeCard}
@@ -116,7 +100,7 @@ export default function HomeScreen() {
               params: {
                 title: 'La Catedral',
                 image: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?q=80&w=400&auto=format&fit=crop', 
-                description: 'El monumento religioso y arquitectónico más emblemático de Jalisco, México.'
+                description: t('home.defaultSiteDescription')
               }
             })}
             activeOpacity={0.8}
@@ -127,7 +111,7 @@ export default function HomeScreen() {
                   <Ionicons name="star" size={12} color={colors.primary} />
                   <Text style={[styles.cardRatingText, { color: colors.text }]}>4.8</Text>
                 </View>
-                <Text style={styles.placeName}>La Catedral</Text>
+                <Text style={styles.placeName}>{t('home.cathedralTitle')}</Text>
               </View>
             </ImageBackground>
           </TouchableOpacity>
@@ -136,6 +120,7 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

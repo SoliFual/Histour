@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext'; // Conexión al tema global
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const userData = {
   username: 'Fulanita102',
@@ -13,30 +15,33 @@ export default function ProfileScreen() {
   const { theme, colors, setTheme } = useTheme(); 
   const [showThemeOptions, setShowThemeOptions] = useState(false);
 
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   const handleLogout = () => router.replace('/login');
 
   // 👇 FUNCIÓN PARA ELIMINAR CUENTA (COMPATIBLE CON WEB Y CELULAR) 👇
   const handleEliminarCuenta = () => {
     if (Platform.OS === 'web') {
       // Confirmación nativa del navegador web
-      const confirmarWeb = window.confirm('¿Estás seguro de querer eliminar tu cuenta?');
+      const confirmarWeb = window.confirm(t('userProfile.alerts.deletePromptWeb'));
       if (confirmarWeb) {
-        alert('Cuenta eliminada permanentemente.\nRedireccionando al inicio de sesión...');
+        alert(t('userProfile.alerts.deleteSuccessWeb'));
         // [AQUÍ IRÁ LA PETICIÓN A LA BASE DE DATOS EN EL FUTURO]
         router.replace('/login');
       }
     } else {
       // Confirmación nativa para Android y iOS
       Alert.alert(
-        'Eliminar Cuenta',
-        '¿Estás seguro de querer eliminar tu cuenta?',
+        t('userProfile.alerts.deleteTitle'),
+        t('userProfile.alerts.deletePrompt'),
         [
           {
-            text: 'Cancelar',
+            text: t('userProfile.alerts.cancel'),
             style: 'cancel', // Solo cierra la ventana
           },
           {
-            text: 'Aceptar',
+            text: t('userProfile.alerts.accept'),
             style: 'destructive', // Pone el texto en rojo en sistemas compatibles
             onPress: () => {
               // [AQUÍ IRÁ LA PETICIÓN A LA BASE DE DATOS EN EL FUTURO]
@@ -53,9 +58,9 @@ export default function ProfileScreen() {
       
       {/* ENCABEZADO */}
       <View style={styles.topHeader}>
-        <Text style={[styles.headerTitle, { color: colors.primary }]}>Perfil</Text>
+        <Text style={[styles.headerTitle, { color: colors.primary }]}>{t('userProfile.headerTitle')}</Text>
         <TouchableOpacity onPress={handleLogout}>
-          <Text style={[styles.logoutText, { color: colors.primary }]}>Cerrar sesión</Text>
+          <Text style={[styles.logoutText, { color: colors.primary }]}>{t('userProfile.logout')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -64,7 +69,9 @@ export default function ProfileScreen() {
         <Ionicons name="person-circle" size={100} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.avatar} />
         <View style={styles.userDetails}>
           <Text style={[styles.username, { color: colors.primary }]}>{userData.username}</Text>
-          <Text style={[styles.userStat, { color: colors.primary }]}>Lugares favoritos: {userData.lugaresFavoritos}</Text>
+          <Text style={[styles.userStat, { color: colors.primary }]}>
+            {t('userProfile.favoritePlaces', { count: userData.lugaresFavoritos })}
+          </Text>
         </View>
       </View>
 
@@ -74,21 +81,21 @@ export default function ProfileScreen() {
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Ionicons name="settings-sharp" size={28} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.sectionIcon} />
-          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Configuración</Text>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('userProfile.settings.title')}</Text>
         </View>
 
         {/* 1. Botón Idioma */}
         <TouchableOpacity style={styles.listItem} onPress={() => router.push('/language')}>
-          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>Idioma seleccionado</Text>
+          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.language')}</Text>
           <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
 
         {/* 2. Botón Tema */}
         <TouchableOpacity style={styles.listItem} onPress={() => setShowThemeOptions(!showThemeOptions)}>
-          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>Tema de la aplicacion</Text>
+          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.theme')}</Text>
           <View style={styles.themeSelector}>
             <Text style={[styles.listItemValue, { color: colors.textSecondary }]}>
-              {theme === 'light' ? 'Claro' : 'Obscuro'}
+              {theme === 'light' ? t('userProfile.settings.themeLight') : t('userProfile.settings.themeDark')}
             </Text>
             <Ionicons name={showThemeOptions ? "chevron-up" : "chevron-down"} size={22} color={colors.textSecondary} />
           </View>
@@ -97,12 +104,16 @@ export default function ProfileScreen() {
         {showThemeOptions && (
           <View style={styles.dropdown}>
             <TouchableOpacity style={styles.dropdownOption} onPress={() => {setTheme('light'); setShowThemeOptions(false);}}>
-              <Text style={[styles.dropdownText, { color: theme === 'light' ? colors.primary : colors.textSecondary }]}>Claro</Text>
+              <Text style={[styles.dropdownText, { color: theme === 'light' ? colors.primary : colors.textSecondary }]}>
+                {t('userProfile.settings.themeLight')}
+              </Text>
               {theme === 'light' && <Ionicons name="checkmark" size={20} color={colors.primary} />}
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.dropdownOption} onPress={() => {setTheme('dark'); setShowThemeOptions(false);}}>
-              <Text style={[styles.dropdownText, { color: theme === 'dark' ? colors.primary : colors.textSecondary }]}>Obscuro</Text>
+              <Text style={[styles.dropdownText, { color: theme === 'dark' ? colors.primary : colors.textSecondary }]}>
+                {t('userProfile.settings.themeDark')}
+              </Text>
               {theme === 'dark' && <Ionicons name="checkmark" size={20} color={colors.primary} />}
             </TouchableOpacity>
           </View>
@@ -110,7 +121,7 @@ export default function ProfileScreen() {
 
         {/* 3. Botón Modificar Perfil */}
         <TouchableOpacity style={styles.listItem} onPress={() => router.push('/edit-profile')}>
-          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>Modificar perfil</Text>
+          <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.editProfile')}</Text>
           <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -121,7 +132,7 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.aboutContainer} onPress={() => router.push('/about')}>
         <View style={styles.sectionHeaderNoMargin}>
           <Ionicons name="help-circle" size={28} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.sectionIcon} />
-          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Acerca de la aplicacion</Text>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('userProfile.about')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
       </TouchableOpacity>
@@ -132,7 +143,7 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.aboutContainer} onPress={() => router.push('/privacy-policy')}>
         <View style={styles.sectionHeaderNoMargin}>
           <Ionicons name="shield-checkmark" size={28} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.sectionIcon} />
-          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Política de Privacidad</Text>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('userProfile.privacyPolicy')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
       </TouchableOpacity>
@@ -142,7 +153,7 @@ export default function ProfileScreen() {
       {/* SECCIÓN ELIMINAR CUENTA */}
       <TouchableOpacity style={styles.deleteContainer} onPress={handleEliminarCuenta}>
         <Ionicons name="trash" size={28} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.sectionIcon} />
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Eliminar Cuenta</Text>
+        <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('userProfile.deleteAccount')}</Text>
       </TouchableOpacity>
       
     </ScrollView>

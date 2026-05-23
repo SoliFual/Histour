@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React from 'react';
 import { ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const MOCK_DATA = [
   { id: '1', title: 'La Catedral', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400' },
@@ -17,7 +19,10 @@ const MOCK_DATA = [
 export default function CategoryOtrosScreen() {
   const { colors } = useTheme();
 
-  // 👇 Filtrado exclusivo para la categoría "Otros" 👇
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
+  // Filtrado exclusivo para la categoría "Otros"
   const otrosFiltrados = MOCK_DATA.filter(lugar => lugar.category === 'Otros');
 
   return (
@@ -29,7 +34,7 @@ export default function CategoryOtrosScreen() {
            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Otros</Text>
+        <Text style={styles.headerTitle}>{t('categoryOtros.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollArea}>
@@ -38,13 +43,13 @@ export default function CategoryOtrosScreen() {
             <TouchableOpacity 
               key={lugar.id} 
               style={styles.card} 
-              // 👇 Navegación dinámica aplicada aquí 👇
               onPress={() => router.push({
                 pathname: '/site-details',
                 params: {
                   title: lugar.title,
                   image: lugar.image,
-                  description: `Explora la increíble historia, arquitectura y legado cultural de ${lugar.title}, un sitio emblemático que forma parte de la identidad de la región.`
+                  // Inyectamos el nombre del lugar en la descripción traducida
+                  description: t('categoryOtros.description', { title: lugar.title })
                 }
               })}
               activeOpacity={0.8}
@@ -64,7 +69,7 @@ export default function CategoryOtrosScreen() {
 
         {otrosFiltrados.length === 0 && (
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No hay sitios registrados en esta categoría por el momento.
+            {t('categoryOtros.emptyText')}
           </Text>
         )}
       </ScrollView>

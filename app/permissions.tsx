@@ -2,9 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function PermissionsScreen() {
   
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   // Función para cuando el usuario acepta el permiso
   const handlePermitir = () => {
     // Nota: Más adelante, aquí agregaremos el código real de Expo para encender la cámara de verdad.
@@ -32,18 +37,19 @@ export default function PermissionsScreen() {
           <Ionicons name="camera-outline" size={40} color="#4E97D1" />
         </View>
 
+        {/* Texto de la alerta conectado al traductor */}
         <Text style={styles.text}>
-          ¿Quieres permitir que Histour haga fotos y grabe videos?
+          {t('permissions.prompt')}
         </Text>
 
         {/* Contenedor de los botones */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.button} onPress={handlePermitir}>
-            <Text style={styles.allowText}>PERMITIR</Text>
+            <Text style={styles.allowText}>{t('permissions.allow')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={handleDenegar}>
-            <Text style={styles.denyText}>DENEGAR</Text>
+            <Text style={styles.denyText}>{t('permissions.deny')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -63,11 +69,11 @@ const styles = StyleSheet.create({
   },
   alertBox: {
     backgroundColor: 'white',
-    width: '75%', // Un poco más angosto para que parezca alerta del sistema
+    width: '75%', 
     padding: 24,
-    borderRadius: 8, // Bordes ligeramente redondeados típicos de Android
+    borderRadius: 8, 
     alignItems: 'center',
-    elevation: 10, // Sombra fuerte
+    elevation: 10, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.3,
@@ -84,7 +90,7 @@ const styles = StyleSheet.create({
     color: '#333333',
     textAlign: 'center',
     marginBottom: 25,
-    lineHeight: 24, // Para que el texto respire un poco
+    lineHeight: 24, 
   },
   buttonContainer: {
     width: '100%',
@@ -95,7 +101,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   allowText: {
-    color: '#4E97D1', // Usamos el azul de Histour
+    color: '#4E97D1', 
     fontWeight: 'bold',
     fontSize: 16,
   },

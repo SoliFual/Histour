@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ImageBackground, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const MOCK_DATA = [
   { id: '1', title: 'La Catedral', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400' },
@@ -19,6 +21,9 @@ const CATEGORIAS = ['Museos', 'Iglesia', 'Monumentos', 'Otros'];
 export default function SearchSiteScreen() {
   const { colors, theme } = useTheme();
   const [search, setSearch] = useState('');
+  
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -35,8 +40,9 @@ export default function SearchSiteScreen() {
           
           <View style={[styles.searchBarContainer, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#1E1E1E' }]}>
             <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+            {/* 3. Traducimos el Placeholder del buscador */}
             <TextInput 
-              placeholder="Buscar lugar" 
+              placeholder={t('searchSite.placeholder')} 
               placeholderTextColor="#999" 
               style={[styles.searchInput, { color: colors.text }]} 
               value={search} 
@@ -52,20 +58,23 @@ export default function SearchSiteScreen() {
           if (lugares.length === 0) return null;
           return (
             <View key={categoria} style={styles.sectionContainer}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{categoria}</Text>
+              {/* 4. Traducimos los títulos de las categorías dinámicamente */}
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {t(`searchSite.categories.${categoria.toLowerCase()}`)}
+              </Text>
               
               <View style={styles.gridRow}>
                 {lugares.map((lugar) => (
                   <TouchableOpacity 
                     key={lugar.id} 
                     style={styles.card} 
-                    // 👇 Aquí reemplazamos el alert por la navegación hacia site-details 👇
                     onPress={() => router.push({
                       pathname: '/site-details',
                       params: {
                         title: lugar.title,
                         image: lugar.image,
-                        description: `Explora la increíble historia, arquitectura y legado cultural de ${lugar.title}, un sitio emblemático que forma parte de la identidad de la región.`
+                        // 5. Usamos el traductor e inyectamos el nombre del lugar en la frase
+                        description: t('searchSite.description', { title: lugar.title })
                       }
                     })}
                     activeOpacity={0.8}

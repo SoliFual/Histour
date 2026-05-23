@@ -1,41 +1,47 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react'; // <-- Se agregó useState aquí
+import React, { useState } from 'react';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 👇 Importamos el gancho del traductor
+import { useTranslation } from 'react-i18next';
 
 export default function LanguageScreen() {
   
-  // 👇 AQUÍ ESTÁ LA MEMORIA QUE FALTABA 👇
-  const [selectedLanguage, setSelectedLanguage] = useState('es');
+  // Activamos el traductor
+  const { t, i18n } = useTranslation();
   
+  // Guardamos el idioma seleccionado (inicia con el que el motor tenga activo)
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'es');
+  
+  // 👇 ESTA ES LA FUNCIÓN CLAVE 👇
+  const cambiarIdioma = (lang: string) => {
+    setSelectedLanguage(lang); // Pinta el circulito azul
+    i18n.changeLanguage(lang); // Traduce toda la aplicación al instante
+  };
+
   const handleContinue = () => {
     if (router.canGoBack()) {
-      // Si venías navegando desde el Perfil, te regresa al Perfil
       router.back();
     } else {
-      // Si estás abriendo la app por primera vez, te manda a la pantalla de permisos
       router.replace('/permissions');
     }
   };
 
   return (
-    // ImageBackground pone la foto del paisaje de Jalisco de fondo
     <ImageBackground
-      // ¡IMPORTANTE!: Asegúrate de tener una imagen llamada 'paisaje.jpg' en tu carpeta assets/images/
       source={require('../assets/images/agave-background.png')} 
       style={styles.background}
       resizeMode="cover"
     >
-      {/* View es como una "caja". Esta caja es el recuadro blanco del centro */}
       <View style={styles.card}>
-        <Text style={styles.title}>Select language</Text>
+        {/* Usamos el traductor para el título */}
+        <Text style={styles.title}>{t('language.title')}</Text>
 
         {/* Opción: English */}
         <TouchableOpacity 
           style={styles.optionContainer} 
-          onPress={() => setSelectedLanguage('en')}
+          onPress={() => cambiarIdioma('en')} // Conectado al traductor
         >
           <View style={styles.radioCircle}>
-            {/* Si el idioma seleccionado es 'en', mostramos el circulito relleno */}
             {selectedLanguage === 'en' && <View style={styles.selectedRb} />}
           </View>
           <Text style={styles.optionText}>English</Text>
@@ -44,19 +50,18 @@ export default function LanguageScreen() {
         {/* Opción: Español */}
         <TouchableOpacity 
           style={styles.optionContainer} 
-          onPress={() => setSelectedLanguage('es')}
+          onPress={() => cambiarIdioma('es')} // Conectado al traductor
         >
           <View style={styles.radioCircle}>
-            {/* Si el idioma seleccionado es 'es', mostramos el circulito relleno */}
             {selectedLanguage === 'es' && <View style={styles.selectedRb} />}
           </View>
           <Text style={styles.optionText}>Español</Text>
         </TouchableOpacity>
 
-        {/* Botón para avanzar a la siguiente pantalla */}
+        {/* Botón Continuar (También usa el traductor) */}
         <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>
-            {selectedLanguage === 'es' ? 'Continuar' : 'Continue'}
+            {t('language.continue')}
           </Text>
         </TouchableOpacity>
 
@@ -65,7 +70,6 @@ export default function LanguageScreen() {
   );
 }
 
-// Aquí está el "CSS" de la pantalla, el maquillaje para que se vea como en tu diseño
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -80,7 +84,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '80%',
     alignItems: 'flex-start',
-    // Sombras para que el cuadro blanco resalte sobre el fondo
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 20,
     color: '#47525E',
-    fontFamily: 'Lato', // Asegúrate de cargar esta fuente si la necesitas exacta
+    fontFamily: 'Lato', 
   },
   optionContainer: {
     flexDirection: 'row',

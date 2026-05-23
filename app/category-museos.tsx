@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React from 'react';
 import { ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 const MOCK_DATA = [
   { id: '1', title: 'La Catedral', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400' },
@@ -17,6 +19,9 @@ const MOCK_DATA = [
 export default function CategoryMuseosScreen() {
   const { colors } = useTheme();
 
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   // Filtrado exclusivo para Museos
   const museosFiltrados = MOCK_DATA.filter(lugar => lugar.category === 'Museos');
 
@@ -29,7 +34,8 @@ export default function CategoryMuseosScreen() {
            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Museos</Text>
+        {/* Usamos el traductor para el título de la cabecera */}
+        <Text style={styles.headerTitle}>{t('categoryMuseos.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollArea}>
@@ -43,7 +49,8 @@ export default function CategoryMuseosScreen() {
                 params: {
                   title: lugar.title,
                   image: lugar.image,
-                  description: `Explora la increíble historia, arquitectura y legado cultural de ${lugar.title}, un sitio emblemático que forma parte de la identidad de la región.`
+                  // Inyectamos el título en el texto de respaldo traducido
+                  description: t('categoryMuseos.description', { title: lugar.title })
                 }
               })}
               activeOpacity={0.8}
@@ -63,7 +70,7 @@ export default function CategoryMuseosScreen() {
 
         {museosFiltrados.length === 0 && (
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No hay museos registrados por el momento.
+            {t('categoryMuseos.emptyText')}
           </Text>
         )}
       </ScrollView>

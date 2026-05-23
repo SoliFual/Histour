@@ -3,13 +3,18 @@ import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function ModalScreen() {
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
+      <ThemedText type="title">{t('modal.title')}</ThemedText>
       <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+        <ThemedText type="link">{t('modal.link')}</ThemedText>
       </Link>
     </ThemedView>
   );

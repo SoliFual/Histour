@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
+// 1. Importamos el traductor
+import { useTranslation } from 'react-i18next';
 
 export default function AudioModeScreen() {
   const { colors } = useTheme();
@@ -11,24 +13,27 @@ export default function AudioModeScreen() {
   // Atrapamos la información del sitio
   const { title, image, image2 } = useLocalSearchParams();
 
+  // 2. Activamos el traductor
+  const { t } = useTranslation();
+
   // Estados interactivos
- // 👇 Usamos el contexto global 👇
+  // Usamos el contexto global
   const { isFavorite, toggleFavorite } = useFavorites();
   
   // Verificamos si este lugar específico está en la lista
   const isCurrentFavorite = isFavorite(title as string);
   const [rating, setRating] = useState(0);
-  // 👇 Función que simula el envío a la base de datos 👇
+
+  // Función que simula el envío a la base de datos
   const enviarCalificacion = () => {
     if (rating === 0) {
-      alert("Por favor, selecciona al menos una estrella para calificar.");
+      alert(t('audioMode.alerts.emptyRating'));
       return;
     }
 
     // AQUÍ IRÁ TU CÓDIGO DE BASE DE DATOS EN EL FUTURO. 
-    // Ejemplo: supabase.from('calificaciones').insert({ sitio: title, estrellas: rating })
-    
-    alert(`¡Calificación de ${rating} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio.`);
+    // Inyectamos la calificación en el texto traducido
+    alert(t('audioMode.alerts.successRating', { rating }));
     
     // Opcional: regresar las estrellas a 0 después de calificar
     // setRating(0); 
@@ -46,7 +51,7 @@ export default function AudioModeScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerLeft}>
           <Ionicons name="arrow-back" size={28} color={COLOR_LIGHT_BLUE} />
-          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>Modo Audioguía</Text>
+          <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.title')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => toggleFavorite({ title, image })}>
@@ -63,8 +68,9 @@ export default function AudioModeScreen() {
         {/* 2. REPRODUCTOR DE AUDIO (Caja Azul Oscuro) */}
         <View style={[styles.audioBox, { backgroundColor: COLOR_DARK_BLUE }]}>
           <View style={styles.audioTopRow}>
+            {/* Inyectamos el nombre del sitio en el reproductor */}
             <Text style={styles.audioTitle} numberOfLines={1}>
-              Audioguía de {title}
+              {t('audioMode.audioTitle', { title })}
             </Text>
             
             <TouchableOpacity onPress={() => setIsPlaying(!isPlaying)} style={styles.playButtonWrapper}>
@@ -99,13 +105,12 @@ export default function AudioModeScreen() {
           onPress={() => router.push({
             pathname: '/timeline',
             params: {
-              title: title, // Le pasamos el nombre del lugar
-              // Simulamos la imagen de la línea de tiempo que luego vendrá de tu BD
+              title: title, 
               timelineImage: 'https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=600&auto=format&fit=crop'
             }
           })}
         >
-          <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>Mostrar linea del tiempo</Text>
+          <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.buttons.timeline')}</Text>
         </TouchableOpacity>
 
         {/* 5. SECCIÓN DE CALIFICACIÓN */}
@@ -126,10 +131,9 @@ export default function AudioModeScreen() {
 
          <TouchableOpacity 
             style={[styles.rateButton, { borderColor: COLOR_LIGHT_BLUE }]}
-            // 👇 Conectamos el botón con la función que creamos 👇
             onPress={enviarCalificacion}
           >
-            <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>Calificar</Text>
+            <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.buttons.rate')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -192,7 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingLeft: 2, // Centra visualmente el ícono de play
+    paddingLeft: 2, 
   },
   progressBarBg: {
     height: 4,
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 6,
     position: 'absolute',
-    marginLeft: -6, // Centra el punto en la orilla
+    marginLeft: -6, 
   },
 
   /* ESTILOS DE IMÁGENES */
