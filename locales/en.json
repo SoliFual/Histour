@@ -306,16 +306,22 @@
     "title": "Modify monument",
     "infoText": "Edit the necessary fields and press \"Save\".",
     "labels": {
-      "name": "Monument name",
-      "year": "Year of creation",
-      "description": "Descriptive text",
+      "name": "Site name",
+      "phrase": "Short description phrase",
+      "category": "Category",
+      "legends": "Legends",
+      "description": "Full descriptive text",
+      "locationUrl": "Location URL (Maps)",
+      "historicalSources": "Historical sources",
       "audioFiles": "Audio files",
-      "timeline": "Timeline",
-      "historicalSources": "Historical sources"
+      "timeline": "Timeline"
     },
     "buttons": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "addImages": "+ Add Images",
+      "addTimeline": "+ Upload Timeline",
+      "addAudio": "+ Upload Audio"
     },
     "alerts": {
       "successMessage": "Changes to \"{{name}}\" have been saved successfully.",
@@ -362,6 +368,20 @@
     }
   },
   "adminAddMonument": {
+    "categories": {
+    "museums": "Museums",
+    "churches": "Churches",
+    "monuments": "Monuments",
+    "others": "Others"
+  },
+  "buttons": {
+    "addImages": "Add Images (Max 3)",
+    "imagesLoaded": "{{count}} images loaded ✅",
+    "addTimeline": "+ Upload Timeline",
+    "timelineLoaded": "Timeline loaded ✅",
+    "addAudioEs": "Add Audio (Spanish)",
+    "addAudioEn": "Add Audio (English)"
+  },
     "title": "Add Monument",
     "labels": {
       "name": "Site name",
@@ -371,13 +391,6 @@
       "description": "Full descriptive text",
       "locationUrl": "Location URL (Maps)",
       "historicalSources": "Historical sources"
-    },
-    "buttons": {
-      "cancel": "Cancel",
-      "save": "Save",
-      "addImages": "+ Add Images",
-      "addTimeline": "+ Upload Timeline",
-      "addAudio": "+ Upload Audio"
     },
     "alerts": {
       "incompleteTitle": "Incomplete fields",

@@ -368,6 +368,20 @@
     }
   },
   "adminAddMonument": {
+    "categories": {
+    "museums": "Museos",
+    "churches": "Iglesias",
+    "monuments": "Monumentos",
+    "others": "Otros"
+  },
+  "buttons": {
+    "addImages": "Agregar Imágenes (Máx. 3)",
+    "imagesLoaded": "{{count}} imágenes cargadas ✅",
+    "addTimeline": "+ Subir Línea de Tiempo",
+    "timelineLoaded": "Línea de tiempo cargada ✅",
+    "addAudioEs": "Agregar Audio (Español)",
+    "addAudioEn": "Agregar Audio (Inglés)"
+  },
     "title": "Agregar monumento",
     "labels": {
       "name": "Nombre del sitio",
@@ -377,13 +391,6 @@
       "description": "Texto descriptivo completo",
       "locationUrl": "URL de ubicación (Maps)",
       "historicalSources": "Fuentes históricas"
-    },
-    "buttons": {
-      "cancel": "Cancelar",
-      "save": "Guardar",
-      "addImages": "+ Agregar Imágenes",
-      "addTimeline": "+ Subir Línea de Tiempo",
-      "addAudio": "+ Subir Audio"
     },
     "alerts": {
       "incompleteTitle": "Campos incompletos",
