@@ -1,25 +1,67 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+
+// 1. IMPORTACIONES DE FIREBASE
+import { deleteUser, signOut } from 'firebase/auth';
+import { deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
 export default function AdminProfileScreen() {
   const { colors, theme, setTheme } = useTheme(); 
   const { t } = useTranslation();
 
+  // 2. ESTADOS PARA GUARDAR LA INFORMACIÓN DEL USUARIO
+  const [username, setUsername] = useState('Cargando...');
+  const [profilePicture, setProfilePicture] = useState(null);
+
+  // 3. EFECTO PARA TRAER LOS DATOS AL ABRIR LA PANTALLA
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUsername(data.username || 'Administrador');
+            setProfilePicture(data.profilePicture || null);
+          }
+        } catch (error) {
+          console.error("Error al cargar datos del perfil:", error);
+          setUsername('Error al cargar');
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // 4. LÓGICA DE CIERRE DE SESIÓN REAL CON FIREBASE
   const handleLogout = () => {
+    const confirmarSalida = async () => {
+      try {
+        await signOut(auth);
+        router.replace('/login');
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+      }
+    };
+
     if (Platform.OS === 'web') {
       const salir = window.confirm(t('adminProfile.alerts.logoutMessage'));
-      if (salir) router.replace('/login');
+      if (salir) confirmarSalida();
     } else {
       Alert.alert(
         t('adminProfile.alerts.logoutTitle'),
         t('adminProfile.alerts.logoutMessage'),
         [
           { text: t('adminProfile.alerts.cancel'), style: 'cancel' },
-          { text: t('adminProfile.alerts.exit'), onPress: () => router.replace('/login') }
+          { text: t('adminProfile.alerts.exit'), onPress: confirmarSalida }
         ]
       );
     }
@@ -41,13 +83,40 @@ export default function AdminProfileScreen() {
     }
   };
 
+  // 5. LÓGICA DE ELIMINACIÓN DE CUENTA REAL CON FIREBASE
   const handleEliminarCuenta = () => {
+    const confirmarEliminacion = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          // Primero borramos sus datos de Firestore
+          await deleteDoc(doc(db, "users", user.uid));
+          // Luego borramos su acceso de Authentication
+          await deleteUser(user);
+          
+          if (Platform.OS === 'web') {
+            alert(t('adminProfile.alerts.deleteSuccessWeb') || "Cuenta eliminada con éxito.");
+          } else {
+            Alert.alert(t('adminProfile.alerts.deleteSuccessTitle'), t('adminProfile.alerts.deleteSuccessMessage'));
+          }
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error("Error al eliminar cuenta:", error);
+        // Si lleva mucho tiempo logueado, Firebase pide que vuelva a iniciar sesión por seguridad
+        if (error.code === 'auth/requires-recent-login') {
+          const msg = "Por seguridad, debes haber iniciado sesión recientemente para eliminar tu cuenta. Cierra sesión y vuelve a entrar.";
+          if (Platform.OS === 'web') alert(msg); else Alert.alert("Aviso de Seguridad", msg);
+        } else {
+          const msgGen = "Ocurrió un error al eliminar tu cuenta. Inténtalo de nuevo.";
+          if (Platform.OS === 'web') alert(msgGen); else Alert.alert("Error", msgGen);
+        }
+      }
+    };
+
     if (Platform.OS === 'web') {
       const confirmar = window.confirm(t('adminProfile.alerts.deletePromptWeb'));
-      if (confirmar) {
-        alert(t('adminProfile.alerts.deleteSuccessWeb'));
-        router.replace('/login');
-      }
+      if (confirmar) confirmarEliminacion();
     } else {
       Alert.alert(
         t('adminProfile.alerts.deleteTitle'),
@@ -57,10 +126,7 @@ export default function AdminProfileScreen() {
           { 
             text: t('adminProfile.alerts.deleteConfirm'), 
             style: 'destructive',
-            onPress: () => {
-              Alert.alert(t('adminProfile.alerts.deleteSuccessTitle'), t('adminProfile.alerts.deleteSuccessMessage'));
-              router.replace('/login');
-            } 
+            onPress: confirmarEliminacion
           }
         ]
       );
@@ -79,10 +145,15 @@ export default function AdminProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 6. SECCIÓN DE PERFIL DINÁMICA */}
         <View style={styles.profileSection}>
-          <Ionicons name="person-circle-outline" size={90} color={theme === 'light' ? '#333' : '#FFF'} />
+          {profilePicture ? (
+            <Image source={{ uri: profilePicture }} style={styles.avatarImage} />
+          ) : (
+            <Ionicons name="person-circle-outline" size={90} color={theme === 'light' ? '#333' : '#FFF'} />
+          )}
           <View style={styles.profileInfo}>
-            <Text style={[styles.username, { color: colors.primary }]}>Fulanita102</Text>
+            <Text style={[styles.username, { color: colors.primary }]}>{username}</Text>
             <Text style={[styles.roleLabel, { color: colors.text }]}>{t('adminProfile.roleAdmin')}</Text> 
           </View>
         </View>
@@ -166,6 +237,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
   logoutText: { fontSize: 16, fontWeight: 'bold', textDecorationLine: 'underline' },
   profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
+  
+  // 7. ESTILO NUEVO PARA LA FOTO
+  avatarImage: { width: 90, height: 90, borderRadius: 45 },
+  
   profileInfo: { marginLeft: 15 },
   username: { fontSize: 22, fontWeight: 'bold' },
   roleLabel: { fontSize: 15, marginTop: 2 },

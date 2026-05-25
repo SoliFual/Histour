@@ -1,55 +1,93 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-// 1. Importamos el traductor
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
-// 👇 Agregamos más usuarios de prueba para forzar a que aparezca la barra de scroll 👇
-const MOCK_ADMINS = [
-  { id: '#001', username: 'Fulanita102' },
-  { id: '#005', username: 'AdminMaster' },
-  { id: '#008', username: 'JefeProy' },
-  { id: '#009', username: 'NataliaUX' },
-  { id: '#011', username: 'CarlosAdmin' },
-  { id: '#012', username: 'MariaSuper' },
-  { id: '#014', username: 'LuisRoot' },
-  { id: '#015', username: 'AnaAdmin' },
-];
+// 1. IMPORTACIONES DE FIREBASE
+import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function AdminListAdminsScreen() {
   const { colors, theme } = useTheme();
-  
-  // 2. Activamos el traductor
   const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [menuActivo, setMenuActivo] = useState<string | null>(null);
-  const [admins, setAdmins] = useState(MOCK_ADMINS);
+  
+  // 2. ESTADOS REALES
+  const [admins, setAdmins] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  // 3. EFECTO PARA CARGAR ADMINISTRADORES DESDE FIRESTORE
+  useEffect(() => {
+    cargarAdministradores();
+  }, []);
+
+  const cargarAdministradores = async () => {
+    setCargando(true);
+    try {
+      // Hacemos una consulta solo buscando los que tengan rol 'admin'
+      const q = query(collection(db, "users"), where("rol", "==", "admin"));
+      const querySnapshot = await getDocs(q);
+      
+      const adminsTemp = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        adminsTemp.push({
+          uid: doc.id, // El UID real de Firebase
+          id: data.userId || '#---', // El consecutivo que inventamos
+          username: data.username || 'Sin usuario',
+          foto: data.profilePicture || null
+        });
+      });
+
+      setAdmins(adminsTemp);
+    } catch (error) {
+      console.error("Error al cargar admins:", error);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const administradoresFiltrados = admins.filter(admin => 
     admin.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
     admin.id.includes(searchQuery)
   );
 
-  const toggleMenu = (id: string) => {
-    if (menuActivo === id) setMenuActivo(null);
-    else setMenuActivo(id);
+  const toggleMenu = (uid: string) => {
+    if (menuActivo === uid) setMenuActivo(null);
+    else setMenuActivo(uid);
   };
 
-  const handleVerPerfil = (username: string) => {
+  // 4. VER PERFIL (Le mandamos el UID real a la siguiente pantalla)
+  const handleVerPerfil = (uid: string) => {
     setMenuActivo(null); 
-    router.push('/admin-view-profile'); 
+    router.push({ 
+      pathname: '/admin-view-profile', 
+      params: { uid: uid } 
+    }); 
   };
 
-  const handleEliminar = (id: string, username: string) => {
+  // 5. ELIMINAR ADMINISTRADOR REAL DE FIRESTORE
+  const handleEliminar = (uid: string, username: string) => {
     setMenuActivo(null);
 
-    const ejecutarEliminacion = () => {
-      setAdmins(prev => prev.filter(admin => admin.id !== id));
-      if (Platform.OS === 'web') alert(t('adminListAdmins.alerts.deleteSuccessWeb', { username }));
-      else Alert.alert(t('adminListAdmins.alerts.deletedTitle'), t('adminListAdmins.alerts.deleteSuccess', { username }));
+    const ejecutarEliminacion = async () => {
+      try {
+        // Borramos el documento de Firestore
+        await deleteDoc(doc(db, "users", uid));
+        
+        // Actualizamos la pantalla quitándolo de la lista
+        setAdmins(prev => prev.filter(admin => admin.uid !== uid));
+        
+        if (Platform.OS === 'web') alert(t('adminListAdmins.alerts.deleteSuccessWeb', { username }));
+        else Alert.alert(t('adminListAdmins.alerts.deletedTitle'), t('adminListAdmins.alerts.deleteSuccess', { username }));
+      } catch (error) {
+        console.error("Error al eliminar admin:", error);
+        Alert.alert("Error", "No se pudo eliminar al administrador.");
+      }
     };
 
     if (Platform.OS === 'web') {
@@ -90,40 +128,54 @@ export default function AdminListAdminsScreen() {
             />
           </View>
 
-          <ScrollView 
-            style={styles.innerScroll} 
-            showsVerticalScrollIndicator={true} 
-            indicatorStyle={theme === 'light' ? 'black' : 'white'}
-          >
-            {administradoresFiltrados.map((admin) => (
-              <View key={admin.id} style={[styles.userRow, { borderBottomColor: colors.border }, menuActivo === admin.id ? { zIndex: 9999, elevation: 10 } : { zIndex: 1, elevation: 1 }]}>
-                <Ionicons name="person-circle" size={45} color="#555555" style={styles.avatarIcon} />
-                <View style={styles.userInfo}>
-                  <Text style={[styles.usernameText, { color: colors.text }]}>{admin.username}</Text>
-                  <Text style={[styles.idText, { color: colors.textSecondary }]}>ID: {admin.id}</Text>
-                </View>
-                <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(admin.id)}>
-                  <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-                </TouchableOpacity>
+          {cargando ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <ScrollView 
+              style={styles.innerScroll} 
+              showsVerticalScrollIndicator={true} 
+              indicatorStyle={theme === 'light' ? 'black' : 'white'}
+            >
+              {administradoresFiltrados.map((admin) => (
+                <View key={admin.uid} style={[styles.userRow, { borderBottomColor: colors.border }, menuActivo === admin.uid ? { zIndex: 9999, elevation: 10 } : { zIndex: 1, elevation: 1 }]}>
+                  
+                  {/* VALIDACIÓN DE FOTO DE PERFIL */}
+                  {admin.foto ? (
+                    <Image source={{ uri: admin.foto }} style={styles.avatarImage} />
+                  ) : (
+                    <Ionicons name="person-circle" size={45} color="#555555" style={styles.avatarIcon} />
+                  )}
 
-                {menuActivo === admin.id && (
-                  <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#162133', borderColor: colors.border }]}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => handleVerPerfil(admin.username)}>
-                      <Text style={[styles.menuText, { color: colors.text }]}>{t('adminListUsers.viewProfile')}</Text>
-                    </TouchableOpacity>
-                    <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
-                    <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(admin.id, admin.username)}>
-                      <Text style={styles.menuTextDanger}>{t('adminListUsers.delete')}</Text>
-                    </TouchableOpacity>
+                  <View style={styles.userInfo}>
+                    <Text style={[styles.usernameText, { color: colors.text }]}>{admin.username}</Text>
+                    <Text style={[styles.idText, { color: colors.textSecondary }]}>ID: {admin.id}</Text>
                   </View>
-                )}
-              </View>
-            ))}
-            
-            {administradoresFiltrados.length === 0 && (
-              <Text style={[styles.noResults, { color: colors.textSecondary }]}>{t('adminListAdmins.noResults')}</Text>
-            )}
-          </ScrollView>
+                  <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(admin.uid)}>
+                    <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+                  </TouchableOpacity>
+
+                  {/* MENÚ DESPLEGABLE */}
+                  {menuActivo === admin.uid && (
+                    <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#162133', borderColor: colors.border }]}>
+                      <TouchableOpacity style={styles.menuItem} onPress={() => handleVerPerfil(admin.uid)}>
+                        <Text style={[styles.menuText, { color: colors.text }]}>{t('adminListUsers.viewProfile')}</Text>
+                      </TouchableOpacity>
+                      <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+                      <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(admin.uid, admin.username)}>
+                        <Text style={styles.menuTextDanger}>{t('adminListUsers.delete')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ))}
+              
+              {administradoresFiltrados.length === 0 && !cargando && (
+                <Text style={[styles.noResults, { color: colors.textSecondary }]}>{t('adminListAdmins.noResults')}</Text>
+              )}
+            </ScrollView>
+          )}
 
           <TouchableOpacity style={[styles.addButton, { borderTopColor: colors.border }]} onPress={() => router.push('/admin-add-admin')}>
             <Ionicons name="add-circle-outline" size={24} color={colors.text} />
@@ -145,9 +197,11 @@ const styles = StyleSheet.create({
   searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, borderBottomWidth: 1 },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, fontSize: 15, padding: 0 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   innerScroll: { flex: 1 }, 
   userRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, position: 'relative' },
   avatarIcon: { marginRight: 15 },
+  avatarImage: { width: 45, height: 45, borderRadius: 22.5, marginRight: 15 }, // Estilo para foto real
   userInfo: { flex: 1 },
   usernameText: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
   idText: { fontSize: 12 },

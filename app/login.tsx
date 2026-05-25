@@ -1,29 +1,69 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-// 1. Importamos el traductor
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+// 1. IMPORTACIONES DE FIREBASE
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
+  const [cargando, setCargando] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // 2. Activamos el traductor
   const { t } = useTranslation();
 
-  // 👇 Lógica de simulación de roles (Etapa 1) 👇
-  const handleLogin = () => {
-    // Convertimos el correo a minúsculas y quitamos espacios por si acaso
+  const handleLogin = async () => {
+    setErrorMessage('');
     const correoIngresado = email.trim().toLowerCase();
 
-    if (correoIngresado === 'sofia.fuentes4280@alumnos.udg.mx' && password === '12345678') {
-      // Es administradora
-      router.replace('/admin-dashboard');
-    } else {
-      // Es usuario normal
-      router.replace('/(tabs)');
+    // Traducción aplicada aquí
+    if (!correoIngresado || !password) {
+      setErrorMessage(t('login.errors.emptyFields'));
+      return;
+    }
+
+    setCargando(true);
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, correoIngresado, password);
+      const user = userCredential.user;
+
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        
+        if (userData.rol === 'admin') {
+          router.replace('/admin-dashboard');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // Traducción aplicada aquí
+        setErrorMessage(t('login.errors.profileNotFound'));
+      }
+
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      
+      // Traducciones aplicadas en el manejo de errores de Firebase
+      if (error.code === 'auth/invalid-email') {
+        setErrorMessage(t('login.errors.invalidEmail'));
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        setErrorMessage(t('login.errors.wrongCredentials'));
+      } else {
+        setErrorMessage(t('login.errors.generalError') + error.message);
+      }
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -59,6 +99,7 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!cargando && !isGoogleLoading}
         />
 
         <Text style={styles.label}>{t('login.labels.password')}</Text>
@@ -68,14 +109,29 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={true}
+          editable={!cargando && !isGoogleLoading}
         />
         
-        <TouchableOpacity onPress={() => router.push('/recover')}>
+        <TouchableOpacity onPress={() => router.push('/recover')} disabled={cargando}>
           <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
+        {errorMessage ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity 
+          style={[styles.loginButton, cargando && { opacity: 0.7 }]} 
+          onPress={handleLogin}
+          disabled={cargando || isGoogleLoading}
+        >
+          {cargando ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
+          )}
         </TouchableOpacity>
 
         <Text style={styles.orText}>{t('login.orText')}</Text>
@@ -83,7 +139,7 @@ export default function LoginScreen() {
         <TouchableOpacity 
           style={styles.googleButton} 
           onPress={handleGoogleLogin}
-          disabled={isGoogleLoading}
+          disabled={isGoogleLoading || cargando}
         >
           {isGoogleLoading ? (
             <ActivityIndicator size="small" color="#47525E" />
@@ -95,7 +151,7 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.registerContainer} onPress={() => router.push('/register')}>
+        <TouchableOpacity style={styles.registerContainer} onPress={() => router.push('/register')} disabled={cargando}>
           <Text style={styles.registerText}>
             {t('login.registerPrompt')} <Text style={styles.registerTextBold}>{t('login.registerLink')}</Text>
           </Text>
@@ -161,6 +217,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'right',
     marginBottom: 20,
+  },
+  errorContainer: { 
+    backgroundColor: '#FDECEA', 
+    padding: 10, 
+    borderRadius: 8, 
+    marginBottom: 15, 
+    borderLeftWidth: 4, 
+    borderLeftColor: '#E74C3C' 
+  },
+  errorText: { 
+    color: '#E74C3C', 
+    fontSize: 13, 
+    fontWeight: '500' 
   },
   loginButton: {
     backgroundColor: '#4E97D1',

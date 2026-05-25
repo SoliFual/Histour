@@ -1,26 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-export default function AdminViewMonumentScreen() {
-  const { colors, theme } = useTheme();
-  const { t } = useTranslation();
+// IMPORTACIONES DE FIREBASE
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
-  // DATOS SIMULADOS (Estructura actualizada)
-  const monumentoMock = {
-    nombre: 'Teatro Degollado',
-    frase: 'Sede de la Orquesta Filarmónica.',
-    categoria: 'Monumentos',
-    leyendas: 'Se dice que una sombra recorre los pasillos...',
-    descripcion: 'Edificio histórico de estilo neoclásico.',
-    urlUbicacion: 'https://maps.app.goo.gl/teatro',
-    fuentes: 'INAH, Archivo Histórico.',
-    audio: 'historia_degollado.mp3',
-    lineaTiempo: 'linea_tiempo.jpg'
-  };
+export default function AdminViewMonumentScreen() {
+  const { colors } = useTheme();
+  const { t, i18n } = useTranslation();
+  const { id } = useLocalSearchParams();
+
+  const [monumento, setMonumento] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  // CARGAR DATOS REALES DE FIREBASE
+  useEffect(() => {
+    const fetchMonument = async () => {
+      if (!id) return;
+      try {
+        const docRef = doc(db, "monuments", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setMonumento(docSnap.data());
+        }
+      } catch (error) {
+        console.error("Error al cargar:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    fetchMonument();
+  }, [id]);
+
+  if (cargando) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // OBTENER DATOS SEGÚN IDIOMA ACTUAL
+  const lang = i18n.language?.startsWith('en') ? 'en' : 'es';
+  const data = monumento.traducciones?.[lang] || monumento;
+
+  // Convertimos a minúsculas para que coincida exactamente con las llaves de tus archivos .json
+  // Si por alguna razón viene vacío, le ponemos 'otros' por defecto para evitar errores.
+  const categoriaKey = monumento.categoria ? monumento.categoria.toLowerCase() : 'otros';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -29,7 +59,7 @@ export default function AdminViewMonumentScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{monumentoMock.nombre}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{data.nombre}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -37,50 +67,76 @@ export default function AdminViewMonumentScreen() {
           
           <Text style={[styles.infoText, { color: colors.textSecondary }]}>{t('adminViewMonument.readonlyMode')}</Text>
 
-          {/* CAMPOS ACTUALIZADOS */}
+          {/* GALERÍA DE IMÁGENES */}
+          <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminViewMonument.labels.images')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom: 20}}>
+            {monumento.imagenesUrls?.map((url, i) => (
+              <Image key={i} source={{ uri: url }} style={styles.galleryImage} />
+            ))}
+          </ScrollView>
+
+          {/* CAMPOS DE TEXTO */}
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.name')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.nombre} editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={data.nombre} editable={false} />
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.phrase')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.frase} editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={data.frase} editable={false} />
           </View>
 
+          {/* CAMPO CATEGORÍA TRADUCIDO */}
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.category')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.categoria} editable={false} />
+            <TextInput 
+              style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} 
+              value={t(`adminAddMonument.categories.${categoriaKey}`)} 
+              editable={false} 
+            />
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.legends')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.leyendas} multiline editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={data.leyendas} multiline editable={false} />
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.description')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.descripcion} multiline editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={data.descripcion} multiline editable={false} />
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.locationUrl')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.urlUbicacion} editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumento.urlUbicacion} editable={false} />
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.historicalSources')}</Text>
-            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={monumentoMock.fuentes} editable={false} />
+            <TextInput style={[styles.input, { color: colors.textSecondary, borderBottomColor: colors.border }]} value={data.fuentes} editable={false} />
           </View>
 
-          {/* Archivos (Solo lectura) */}
-          <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.audio')}</Text>
-            <View style={styles.fileButton}><Text style={{color: colors.textSecondary}}>{monumentoMock.audio}</Text></View>
+          {/* LÍNEA DE TIEMPO */}
+          <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminViewMonument.labels.timeline')}</Text>
+          {monumento.timelineUrl ? (
+            <Image source={{ uri: monumento.timelineUrl }} style={styles.timelineImage} />
+          ) : (
+            <Text style={{color: colors.textSecondary, marginBottom: 15}}>{t('adminViewMonument.labels.status.missing')}</Text>
+          )}
+
+          {/* AUDIOS */}
+          <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminViewMonument.labels.audioEs')}</Text>
+          <View style={styles.fileButton}>
+            <Text style={{color: colors.textSecondary}}>
+              {monumento.audiosUrls?.es ? t('adminViewMonument.labels.status.present') : t('adminViewMonument.labels.status.missing')}
+            </Text>
           </View>
-          <View style={styles.inputWrapper}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>{t('adminAddMonument.labels.timeline')}</Text>
-            <View style={styles.fileButton}><Text style={{color: colors.textSecondary}}>{monumentoMock.lineaTiempo}</Text></View>
+
+          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 10 }]}>{t('adminViewMonument.labels.audioEn')}</Text>
+          <View style={styles.fileButton}>
+            <Text style={{color: colors.textSecondary}}>
+              {monumento.audiosUrls?.en ? t('adminViewMonument.labels.status.present') : t('adminViewMonument.labels.status.missing')}
+            </Text>
           </View>
 
         </View>
@@ -108,7 +164,9 @@ const styles = StyleSheet.create({
   inputWrapper: { marginBottom: 20 },
   inputLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 5 },
   input: { borderBottomWidth: 1, paddingVertical: 8, fontSize: 16 },
-  fileButton: { borderBottomWidth: 1, paddingVertical: 10 },
+  fileButton: { borderBottomWidth: 1, paddingVertical: 10, marginBottom: 10 },
+  galleryImage: { width: 100, height: 100, borderRadius: 10, marginRight: 10 },
+  timelineImage: { width: '100%', height: 200, borderRadius: 10, marginBottom: 20, resizeMode: 'contain' },
   bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#0A2342', height: 75, paddingBottom: 10, position: 'absolute', bottom: 0, width: '100%' },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navText: { fontSize: 9, color: '#FFFFFF', textAlign: 'center', marginTop: 4 },

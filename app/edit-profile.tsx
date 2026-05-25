@@ -1,83 +1,162 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-// 1. Importamos el traductor
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
-// VALORES INICIALES DE LA "BASE DE DATOS"
-const valoresIniciales = {
-  username: 'Fulanita102',
-  nombre: 'Fulanita Perez',
-  correo: 'Fulanita@gmail.com',
-  password: '12345678',
-};
+// 1. IMPORTAMOS EXPO IMAGE PICKER
+import * as ImagePicker from 'expo-image-picker';
+
+// 2. IMPORTACIONES DE FIREBASE
+import { signOut, updateEmail, updatePassword } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, db, storage } from '../firebaseConfig';
 
 export default function EditProfileScreen() {
   const { colors, theme } = useTheme();
-  
-  // 2. Activamos el traductor
   const { t } = useTranslation();
 
-  // EL ANTÍDOTO CONTRA EL OJO DE EDGE
+  const [cargando, setCargando] = useState(true); 
+  const [guardando, setGuardando] = useState(false); 
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [datosOriginales, setDatosOriginales] = useState(null);
+
+  const [username, setUsername] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [password, setPassword] = useState(''); 
+  const [confirmPassword, setConfirmPassword] = useState(''); 
+  const [profilePicture, setProfilePicture] = useState(null); 
+
+  const [errorNombre, setErrorNombre] = useState('');
+  const [errorPassword, setErrorPassword] = useState('');
+  const [errorConfirmPassword, setErrorConfirmPassword] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   useEffect(() => {
     if (Platform.OS === 'web') {
       const style = document.createElement('style');
       style.innerHTML = `
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear,
-        input[type="password"]::-webkit-credentials-auto-fill-button {
-          display: none !important;
-        }
+        input[type="password"]::-webkit-credentials-auto-fill-button { display: none !important; }
       `;
       document.head.appendChild(style);
       return () => { document.head.removeChild(style); };
     }
   }, []);
 
-  // ESTADOS DEL FORMULARIO
-  const [username, setUsername] = useState(valoresIniciales.username);
-  const [nombre, setNombre] = useState(valoresIniciales.nombre);
-  const [correo, setCorreo] = useState(valoresIniciales.correo);
-  const [password, setPassword] = useState(valoresIniciales.password); 
-  const [confirmPassword, setConfirmPassword] = useState(''); 
-
-  // ESTADOS DE ERROR
-  const [errorNombre, setErrorNombre] = useState('');
-  const [errorPassword, setErrorPassword] = useState('');
-  const [errorConfirmPassword, setErrorConfirmPassword] = useState('');
-
-  // ESTADOS PARA MOSTRAR/OCULTAR CONTRASEÑA
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const handleLogout = () => {
-    router.replace('/login');
-  };
-
-  const handleCambiarFoto = () => {
-    if (Platform.OS === 'web') {
-      const permiso = window.confirm(t('editProfile.alerts.galleryPromptWeb'));
-      if (permiso) {
-        alert(t('editProfile.alerts.galleryOpeningWeb'));
-      }
-    } else {
-      Alert.alert(
-        t('editProfile.alerts.galleryTitle'),
-        t('editProfile.alerts.galleryPrompt'),
-        [
-          { text: t('editProfile.alerts.deny'), style: 'cancel' },
-          { 
-            text: t('editProfile.alerts.allow'), 
-            onPress: () => Alert.alert(t('editProfile.alerts.galleryTitle'), t('editProfile.alerts.galleryOpening')) 
+  // CARGAMOS LOS DATOS
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setDatosOriginales(data);
+            setUsername(data.username || '');
+            setNombre(data.fullName || '');
+            setCorreo(data.email || user.email || '');
+            setProfilePicture(data.profilePicture || null); 
           }
-        ]
-      );
+        } catch (error) {
+          console.error("Error al cargar perfil:", error);
+        }
+      }
+      setCargando(false);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/login');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
     }
   };
 
-  const handleGuardarCambios = () => {
+  // 👇 LÓGICA DE LA GALERÍA CON PERMISOS AVANZADOS 👇
+  const handleCambiarFoto = async () => {
+    // 1. Pedir permisos de la galería
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      // Verificamos si el sistema ya nos bloqueó la opción de preguntar
+      if (!permissionResult.canAskAgain) {
+        if (Platform.OS === 'web') {
+          alert("Debes habilitar los permisos desde la configuración de tu navegador.");
+        } else {
+          Alert.alert(
+            "Permiso necesario",
+            "Has denegado el acceso a la galería permanentemente. Por favor, ve a los ajustes de tu teléfono para habilitarlo manualmente.",
+            [
+              { text: "Cancelar", style: "cancel" },
+              { text: "Abrir Ajustes", onPress: () => Linking.openSettings() }
+            ]
+          );
+        }
+      } else {
+        // El rechazo normal, la primera o segunda vez
+        const msgPermiso = "Se requiere permiso para acceder a la galería y cambiar tu foto.";
+        if (Platform.OS === 'web') alert(msgPermiso); else Alert.alert("Permiso Denegado", msgPermiso);
+      }
+      return;
+    }
+
+    // 2. Abrir la galería
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1], 
+      quality: 0.5,   
+    });
+
+    // 3. Subir la imagen
+    if (!result.canceled) {
+      setSubiendoFoto(true); 
+      
+      try {
+        const user = auth.currentUser;
+        const imageUri = result.assets[0].uri;
+
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+
+        const storageRef = ref(storage, `profilePictures/${user.uid}`);
+        
+        await uploadBytes(storageRef, blob);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        await updateDoc(doc(db, "users", user.uid), {
+          profilePicture: downloadURL
+        });
+
+        setProfilePicture(downloadURL);
+        
+        const msgExito = "Tu foto de perfil se actualizó correctamente.";
+        if (Platform.OS === 'web') alert(msgExito); else Alert.alert("¡Listo!", msgExito);
+
+      } catch (error) {
+        console.error("Error al subir foto:", error);
+        const msgError = "Ocurrió un error al subir la imagen. Inténtalo de nuevo.";
+        if (Platform.OS === 'web') alert(msgError); else Alert.alert("Error", msgError);
+      } finally {
+        setSubiendoFoto(false); 
+      }
+    }
+  };
+
+  const handleGuardarCambios = async () => {
     setErrorNombre('');
     setErrorPassword('');
     setErrorConfirmPassword('');
@@ -89,7 +168,7 @@ export default function EditProfileScreen() {
       todoCorrecto = false;
     }
 
-    if (password !== valoresIniciales.password) {
+    if (password.length > 0) {
       if (password.length < 8) {
         setErrorPassword(t('editProfile.errors.passwordShort'));
         todoCorrecto = false;
@@ -102,57 +181,84 @@ export default function EditProfileScreen() {
     if (!todoCorrecto) return;
 
     const haCambiadoAlgo = 
-      username !== valoresIniciales.username ||
-      nombre !== valoresIniciales.nombre ||
-      correo !== valoresIniciales.correo ||
-      password !== valoresIniciales.password;
+      username !== datosOriginales?.username ||
+      nombre !== datosOriginales?.fullName ||
+      correo !== datosOriginales?.email ||
+      password.length > 0;
 
     if (!haCambiadoAlgo) {
-      if (Platform.OS === 'web') {
-        alert(t('editProfile.alerts.noChangesMessage'));
-      } else {
-        Alert.alert(t('editProfile.alerts.noChangesTitle'), t('editProfile.alerts.noChangesMessage'));
-      }
+      if (Platform.OS === 'web') alert(t('editProfile.alerts.noChangesMessage'));
+      else Alert.alert(t('editProfile.alerts.noChangesTitle'), t('editProfile.alerts.noChangesMessage'));
       return;
     }
 
-    if (Platform.OS === 'web') {
-      const deAcuerdo = window.confirm(t('editProfile.alerts.confirmSavePrompt'));
-      if (deAcuerdo) {
-        alert(t('editProfile.alerts.saveSuccessWeb'));
-        router.back();
+    setGuardando(true);
+    try {
+      const user = auth.currentUser;
+
+      if (password.length > 0) {
+        await updatePassword(user, password);
       }
-    } else {
-      Alert.alert(
-        t('editProfile.alerts.confirmSaveTitle'),
-        t('editProfile.alerts.confirmSavePrompt'),
-        [
-          { text: t('editProfile.alerts.cancel'), style: 'cancel' },
-          {
-            text: t('editProfile.alerts.save'),
-            onPress: () => {
-              Alert.alert(
-                t('editProfile.alerts.saveSuccessTitle'), 
-                t('editProfile.alerts.saveSuccessMessage'),
-                [{ text: 'OK', onPress: () => router.back() }] 
-              );
-            },
-          },
-        ]
-      );
+
+      if (correo !== user.email) {
+        await updateEmail(user, correo);
+      }
+
+      await updateDoc(doc(db, "users", user.uid), {
+        fullName: nombre,
+        username: username,
+        email: correo
+      });
+
+      setDatosOriginales({ ...datosOriginales, fullName: nombre, username: username, email: correo });
+      setPassword('');
+      setConfirmPassword('');
+
+      if (Platform.OS === 'web') {
+        alert(t('editProfile.alerts.saveSuccessWeb') || "Cambios guardados con éxito.");
+        router.back();
+      } else {
+        Alert.alert(
+          t('editProfile.alerts.saveSuccessTitle'), 
+          t('editProfile.alerts.saveSuccessMessage'),
+          [{ text: 'OK', onPress: () => router.back() }] 
+        );
+      }
+
+    } catch (error) {
+      console.error("Error al guardar cambios:", error);
+      if (error.code === 'auth/requires-recent-login') {
+        const msg = "Por seguridad, para cambiar tu contraseña o correo debes haber iniciado sesión recientemente. Cierra sesión y vuelve a entrar.";
+        if (Platform.OS === 'web') alert(msg); else Alert.alert("Aviso de Seguridad", msg);
+      } else if (error.code === 'auth/email-already-in-use') {
+        const msgEmail = t('register.errors.emailInUse') || "Este correo ya está en uso.";
+        if (Platform.OS === 'web') alert(msgEmail); else Alert.alert("Error", msgEmail);
+      } else {
+        const msgGen = "Ocurrió un error al guardar. Inténtalo de nuevo.";
+        if (Platform.OS === 'web') alert(msgGen); else Alert.alert("Error", msgGen);
+      }
+    } finally {
+      setGuardando(false);
     }
   };
+
+  if (cargando) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       
-      {/* ENCABEZADO */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={guardando}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
           <Text style={[styles.headerTitle, { color: colors.primary }]}>{t('editProfile.headerTitle')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleLogout}>
+        <TouchableOpacity onPress={handleLogout} disabled={guardando}>
           <Text style={[styles.logoutText, { color: colors.primary }]}>{t('editProfile.logout')}</Text>
         </TouchableOpacity>
       </View>
@@ -161,8 +267,15 @@ export default function EditProfileScreen() {
         <TouchableOpacity 
           style={[styles.avatarCircle, { borderColor: theme === 'light' ? '#333333' : '#FFFFFF' }]}
           onPress={handleCambiarFoto}
+          disabled={subiendoFoto}
         >
-          <Ionicons name="camera" size={65} color={theme === 'light' ? '#333333' : '#FFFFFF'} />
+          {subiendoFoto ? (
+            <ActivityIndicator size="large" color={theme === 'light' ? '#333333' : '#FFFFFF'} />
+          ) : profilePicture ? (
+            <Image source={{ uri: profilePicture }} style={styles.avatarImage} />
+          ) : (
+            <Ionicons name="camera" size={65} color={theme === 'light' ? '#333333' : '#FFFFFF'} />
+          )}
         </TouchableOpacity>
         
         <View style={styles.usernameRow}>
@@ -170,6 +283,7 @@ export default function EditProfileScreen() {
             style={[styles.usernameInput, { color: colors.primary }]} 
             value={username} 
             onChangeText={setUsername} 
+            editable={!guardando}
           />
           <Ionicons name="pencil" size={20} color={colors.primary} />
         </View>
@@ -186,6 +300,7 @@ export default function EditProfileScreen() {
               onChangeText={setNombre} 
               placeholder={t('editProfile.placeholders.name')}
               placeholderTextColor="#999"
+              editable={!guardando}
             />
             <Ionicons name="pencil" size={18} color={colors.primary} />
           </View>
@@ -201,6 +316,7 @@ export default function EditProfileScreen() {
               onChangeText={setCorreo} 
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!guardando}
             />
             <Ionicons name="pencil" size={18} color={colors.primary} />
           </View>
@@ -215,8 +331,11 @@ export default function EditProfileScreen() {
               onChangeText={setPassword} 
               secureTextEntry={!showPassword} 
               autoCapitalize="none"
+              placeholder="•••••••• (Opcional)"
+              placeholderTextColor="#999"
+              editable={!guardando}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon} disabled={guardando}>
               <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={colors.primary} />
             </TouchableOpacity>
             <Ionicons name="pencil" size={18} color={colors.primary} />
@@ -224,7 +343,7 @@ export default function EditProfileScreen() {
           {errorPassword !== '' && <Text style={styles.errorText}>{errorPassword}</Text>}
         </View>
 
-        {password !== valoresIniciales.password && (
+        {password.length > 0 && (
           <View style={styles.fieldWrapper}>
             <View style={styles.fieldRow}>
               <Text style={[styles.fieldLabel, { color: colors.primary }]}>{t('editProfile.labels.confirmPassword')}</Text>
@@ -236,8 +355,9 @@ export default function EditProfileScreen() {
                 placeholder={t('editProfile.placeholders.confirmPassword')}
                 placeholderTextColor="#999"
                 autoCapitalize="none"
+                editable={!guardando}
               />
-              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon} disabled={guardando}>
                 <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.primary} />
               </TouchableOpacity>
               <Ionicons name="pencil" size={18} color={colors.primary} />
@@ -246,8 +366,16 @@ export default function EditProfileScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleGuardarCambios}>
-          <Text style={styles.saveButtonText}>{t('editProfile.saveButton')}</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, guardando && { opacity: 0.7 }]} 
+          onPress={handleGuardarCambios}
+          disabled={guardando}
+        >
+          {guardando ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>{t('editProfile.saveButton')}</Text>
+          )}
         </TouchableOpacity>
 
       </View>
@@ -262,7 +390,17 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 5 },
   logoutText: { fontSize: 16, fontWeight: 'bold', textDecorationLine: 'underline' },
   avatarSection: { alignItems: 'center', marginBottom: 40 },
-  avatarCircle: { width: 150, height: 150, borderRadius: 75, borderWidth: 6, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  avatarCircle: { 
+    width: 150, 
+    height: 150, 
+    borderRadius: 75, 
+    borderWidth: 6, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 20,
+    overflow: 'hidden' 
+  },
+  avatarImage: { width: '100%', height: '100%' },
   usernameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   usernameInput: { fontSize: 26, fontWeight: 'bold', marginRight: 10, textAlign: 'center', padding: 0 },
   formContainer: { paddingHorizontal: 10, paddingBottom: 40 },

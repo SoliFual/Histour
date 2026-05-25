@@ -47,6 +47,8 @@
       "email": "correo@gmail.com"
     },
     "errors": {
+      "emailInUse": "Ya existe una cuenta con este correo.",
+      "usernameInUse": "Este nombre de usuario no está disponible.",
       "emptyFields": "Por favor llena todos los datos para crear tu cuenta.",
       "missingLastName": "Por favor ingresa tu nombre y al menos un apellido.",
       "invalidEmail": "Ingresa un correo electrónico válido (ejemplo: usuario@correo.com).",
@@ -135,6 +137,13 @@
     "placeholders": {
       "email": "correo@gmail.com"
     },
+    "errors": {
+    "emptyFields": "Por favor ingresa tu correo y contraseña.",
+    "invalidEmail": "El formato del correo es inválido.",
+    "wrongCredentials": "Correo o contraseña incorrectos.",
+    "profileNotFound": "Error: No se encontró el perfil del usuario.",
+    "generalError": "Error de conexión: "
+  },
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "loginButton": "Iniciar sesión",
     "orText": "o",
@@ -238,19 +247,18 @@
     }
   },
 "adminViewMonument": {
-    "readonlyMode": "Modo de solo lectura. Los datos no pueden ser modificados.",
-    "labels": {
-      "name": "Nombre del sitio",
-      "phrase": "Frase descriptiva",
-      "category": "Categoría",
-      "legends": "Leyendas",
-      "description": "Texto descriptivo completo",
-      "locationUrl": "URL de ubicación (Maps)",
-      "historicalSources": "Fuentes históricas",
-      "audio": "Archivo de audio",
-      "timeline": "Línea de tiempo"
+  "readonlyMode": "Modo de solo lectura",
+  "labels": {
+    "audioEs": "Audio (Español)",
+    "audioEn": "Audio (Inglés)",
+    "timeline": "Línea de tiempo",
+    "images": "Imágenes del monumento",
+    "status": {
+      "present": "Disponible ✅",
+      "missing": "No disponible"
     }
-  },
+  }
+},
   "adminUsers": {
     "admins": "Administradores",
     "users": "Usuarios",
@@ -367,13 +375,13 @@
       "admins": "Administradores"
     }
   },
-  "adminAddMonument": {
+ "adminAddMonument": {
     "categories": {
-    "museums": "Museos",
-    "churches": "Iglesias",
-    "monuments": "Monumentos",
-    "others": "Otros"
-  },
+      "museos": "Museos",
+      "iglesias": "Iglesias",
+      "monumentos": "Monumentos", 
+      "otros": "Otros"
+    },
   "buttons": {
     "addImages": "Agregar Imágenes (Máx. 3)",
     "imagesLoaded": "{{count}} imágenes cargadas ✅",

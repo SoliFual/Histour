@@ -47,6 +47,8 @@
       "email": "email@gmail.com"
     },
     "errors": {
+      "emailInUse": "An account with this email already exists.",
+      "usernameInUse": "This username is not available.",
       "emptyFields": "Please fill in all fields to create your account.",
       "missingLastName": "Please enter your first name and at least one last name.",
       "invalidEmail": "Enter a valid email address (example: user@email.com).",
@@ -135,6 +137,13 @@
     "placeholders": {
       "email": "email@gmail.com"
     },
+    "errors": {
+    "emptyFields": "Please enter your email and password.",
+    "invalidEmail": "The email format is invalid.",
+    "wrongCredentials": "Incorrect email or password.",
+    "profileNotFound": "Error: User profile not found.",
+    "generalError": "Connection error: "
+  },
     "forgotPassword": "Forgot your password?",
     "loginButton": "Log in",
     "orText": "or",
@@ -238,19 +247,18 @@
     }
   },
 "adminViewMonument": {
-    "readonlyMode": "Read-only mode. Data cannot be modified.",
-    "labels": {
-      "name": "Site name",
-      "phrase": "Short description phrase",
-      "category": "Category",
-      "legends": "Legends",
-      "description": "Full descriptive text",
-      "locationUrl": "Location URL (Maps)",
-      "historicalSources": "Historical sources",
-      "audio": "Audio file",
-      "timeline": "Timeline"
+  "readonlyMode": "Read-only mode",
+  "labels": {
+    "audioEs": "Audio (Spanish)",
+    "audioEn": "Audio (English)",
+    "timeline": "Timeline",
+    "images": "Monument Images",
+    "status": {
+      "present": "Available ✅",
+      "missing": "Not available"
     }
-  },
+  }
+},
   "adminUsers": {
     "admins": "Administrators",
     "users": "Users",
@@ -369,10 +377,10 @@
   },
   "adminAddMonument": {
     "categories": {
-    "museums": "Museums",
-    "churches": "Churches",
-    "monuments": "Monuments",
-    "others": "Others"
+    "museos": "Museums",
+    "iglesias": "Churches",
+    "monumentos": "Monuments",
+    "otros": "Others"
   },
   "buttons": {
     "addImages": "Add Images (Max 3)",

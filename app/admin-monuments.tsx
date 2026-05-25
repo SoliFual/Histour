@@ -1,52 +1,99 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-const MOCK_MONUMENTOS = [
-  { id: '#M001', name: 'Catedral de Guadalajara', image: 'https://images.unsplash.com/photo-1583089892943-e02e52f17d5c?q=80&w=200&auto=format&fit=crop' },
-  { id: '#M002', name: 'Hospicio Cabañas', image: 'https://images.unsplash.com/photo-1629807402636-218a5628b5e9?q=80&w=200&auto=format&fit=crop' },
-  { id: '#M003', name: 'Teatro Degollado', image: 'https://images.unsplash.com/photo-1572986427301-1628d0034a6e?q=80&w=200&auto=format&fit=crop' },
-  { id: '#M004', name: 'Arcos de Guadalajara', image: 'https://images.unsplash.com/photo-1571216503932-512b9d7cd229?q=80&w=200&auto=format&fit=crop' },
-  { id: '#M005', name: 'Rotonda de los Jaliscienses Ilustres', image: 'https://images.unsplash.com/photo-1605650117004-9d58700ba3f2?q=80&w=200&auto=format&fit=crop' },
-];
+// IMPORTACIONES DE FIREBASE
+import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function AdminMonumentsScreen() {
   const { colors, theme } = useTheme();
-  const { t } = useTranslation();
+  // Extraemos i18n para saber en qué idioma está la app en este momento
+  const { t, i18n } = useTranslation(); 
 
   const [searchQuery, setSearchQuery] = useState('');
   const [menuActivo, setMenuActivo] = useState<string | null>(null);
-  const [monumentos, setMonumentos] = useState(MOCK_MONUMENTOS);
+  const [monumentos, setMonumentos] = useState([]);
+  const [cargando, setCargando] = useState(true);
 
-  const monumentosFiltrados = monumentos.filter(monumento => 
-    monumento.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    monumento.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Variable para saber si estamos en 'en' o 'es'
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'es';
+
+  // CARGAR LOS MONUMENTOS REALES DE FIREBASE
+  useEffect(() => {
+    try {
+      const q = query(collection(db, "monuments"));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const monumentosData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            firestoreId: doc.id,
+            displayId: data.monumentoId || 'N/A',
+            // Guardamos todo el mapa de traducciones para usarlo después
+            traducciones: data.traducciones || null, 
+            fallbackName: data.nombre || 'Sin nombre',
+            image: data.imagenesUrls && data.imagenesUrls.length > 0 ? data.imagenesUrls[0] : 'https://via.placeholder.com/150'
+          };
+        });
+        setMonumentos(monumentosData);
+        setCargando(false);
+      }, (error) => {
+        console.error("Error al escuchar Firebase:", error);
+        alert("Error de permisos o conexión con Firebase. Revisa la consola.");
+        setCargando(false);
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error general en el useEffect:", error);
+      setCargando(false);
+    }
+  }, []);
+
+  // FUNCIÓN PARA OBTENER EL NOMBRE EN EL IDIOMA ACTUAL
+  const getTranslatedName = (monumento) => {
+    if (monumento.traducciones && monumento.traducciones[currentLang] && monumento.traducciones[currentLang].nombre) {
+      return monumento.traducciones[currentLang].nombre;
+    }
+    return monumento.fallbackName; // Si algo falla, mostramos el nombre original
+  };
+
+  // FILTRADO DINÁMICO (Busca usando el nombre traducido)
+  const monumentosFiltrados = monumentos.filter(monumento => {
+    const translatedName = getTranslatedName(monumento);
+    return translatedName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           monumento.displayId.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const toggleMenu = (id: string) => {
     if (menuActivo === id) setMenuActivo(null);
     else setMenuActivo(id);
   };
 
-  const handleVer = (name: string) => {
+  const handleVer = (firestoreId: string) => {
     setMenuActivo(null);
-    router.push('/admin-view-monument'); 
+    router.push({ pathname: '/admin-view-monument', params: { id: firestoreId } }); 
   };
 
-  const handleModificar = (name: string) => {
+  const handleModificar = (firestoreId: string) => {
     setMenuActivo(null);
-    router.push('/admin-modify-monument'); 
+    router.push({ pathname: '/admin-modify-monument', params: { id: firestoreId } }); 
   };
 
-  const handleEliminar = (id: string, name: string) => {
+  const handleEliminar = (firestoreId: string, name: string) => {
     setMenuActivo(null);
-    const ejecutarEliminacion = () => {
-      setMonumentos(prev => prev.filter(monumento => monumento.id !== id));
-      if (Platform.OS === 'web') alert(t('adminMonuments.alerts.deleteSuccessWeb', { name }));
-      else Alert.alert(t('adminMonuments.alerts.deletedTitle'), t('adminMonuments.alerts.deleteSuccess', { name }));
+    const ejecutarEliminacion = async () => {
+      try {
+        await deleteDoc(doc(db, "monuments", firestoreId));
+        if (Platform.OS === 'web') alert(t('adminMonuments.alerts.deleteSuccessWeb', { name }));
+        else Alert.alert(t('adminMonuments.alerts.deletedTitle'), t('adminMonuments.alerts.deleteSuccess', { name }));
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+        Alert.alert("Error", "No se pudo eliminar el monumento.");
+      }
     };
 
     if (Platform.OS === 'web') {
@@ -89,30 +136,50 @@ export default function AdminMonumentsScreen() {
             )}
           </View>
 
-          <ScrollView style={styles.innerScroll} showsVerticalScrollIndicator={true} indicatorStyle={theme === 'light' ? 'black' : 'white'}>
-            {monumentosFiltrados.map((monumento) => (
-              <View key={monumento.id} style={[styles.monumentoRow, { borderBottomColor: colors.border }, menuActivo === monumento.id ? { zIndex: 9999 } : { zIndex: 1 }]}>
-                <Image source={{ uri: monumento.image }} style={styles.monumentoPhoto} />
-                <View style={styles.monumentoInfo}>
-                  <Text style={[styles.monumentoNameText, { color: colors.text }]} numberOfLines={2}>{monumento.name}</Text>
-                  <Text style={[styles.idText, { color: colors.textSecondary }]}>ID: {monumento.id}</Text>
-                </View>
-                <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(monumento.id)}>
-                  <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-                </TouchableOpacity>
-                {menuActivo === monumento.id && (
-                  <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#162133', borderColor: colors.border }]}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => handleVer(monumento.name)}><Text style={[styles.menuText, { color: colors.text }]}>{t('admin.ver')}</Text></TouchableOpacity>
-                    <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
-                    <TouchableOpacity style={styles.menuItem} onPress={() => handleModificar(monumento.name)}><Text style={[styles.menuText, { color: colors.text }]}>{t('admin.modificar')}</Text></TouchableOpacity>
-                    <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
-                    <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(monumento.id, monumento.name)}><Text style={styles.menuTextDanger}>{t('admin.eliminar')}</Text></TouchableOpacity>
+          {cargando ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <ScrollView style={styles.innerScroll} showsVerticalScrollIndicator={true} indicatorStyle={theme === 'light' ? 'black' : 'white'}>
+              {monumentosFiltrados.map((monumento) => {
+                // Obtenemos el nombre dinámico para pintar la fila
+                const translatedName = getTranslatedName(monumento);
+
+                return (
+                  <View key={monumento.firestoreId} style={[styles.monumentoRow, { borderBottomColor: colors.border }, menuActivo === monumento.firestoreId ? { zIndex: 9999 } : { zIndex: 1 }]}>
+                    <Image source={{ uri: monumento.image }} style={styles.monumentoPhoto} />
+                    <View style={styles.monumentoInfo}>
+                      <Text style={[styles.monumentoNameText, { color: colors.text }]} numberOfLines={2}>
+                        {translatedName}
+                      </Text>
+                      <Text style={[styles.idText, { color: colors.textSecondary }]}>ID: {monumento.displayId}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.dotsButton} onPress={() => toggleMenu(monumento.firestoreId)}>
+                      <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    
+                    {menuActivo === monumento.firestoreId && (
+                      <View style={[styles.dropdownMenu, { backgroundColor: theme === 'light' ? '#FFFFFF' : '#162133', borderColor: colors.border }]}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => handleVer(monumento.firestoreId)}>
+                          <Text style={[styles.menuText, { color: colors.text }]}>{t('admin.ver')}</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+                        <TouchableOpacity style={styles.menuItem} onPress={() => handleModificar(monumento.firestoreId)}>
+                          <Text style={[styles.menuText, { color: colors.text }]}>{t('admin.modificar')}</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+                        <TouchableOpacity style={styles.menuItem} onPress={() => handleEliminar(monumento.firestoreId, translatedName)}>
+                          <Text style={styles.menuTextDanger}>{t('admin.eliminar')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
-            ))}
-            {monumentosFiltrados.length === 0 && <Text style={[styles.noResults, { color: colors.textSecondary }]}>{t('adminMonuments.noResults')}</Text>}
-          </ScrollView>
+                );
+              })}
+              {monumentosFiltrados.length === 0 && <Text style={[styles.noResults, { color: colors.textSecondary }]}>{t('adminMonuments.noResults')}</Text>}
+            </ScrollView>
+          )}
 
           <TouchableOpacity style={[styles.addButton, { borderTopColor: colors.border }]} onPress={() => router.push('/admin-add-monument')}>
             <Ionicons name="add-circle-outline" size={24} color={colors.text} />
