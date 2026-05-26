@@ -1,29 +1,92 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// 1. IMPORTACIONES DE FIREBASE
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+// IMPORTACIONES DE EXPO PARA GOOGLE
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+// IMPORTACIONES DE FIREBASE
+import { GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+
+// Esto le dice al navegador interno de Expo que se cierre cuando el usuario termine de hacer login
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  
   const [cargando, setCargando] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const { t } = useTranslation();
 
+  // 👇 CONFIGURACIÓN DE GOOGLE 👇
+  // (Tendrás que reemplazar estos textos por los IDs reales que te dé Google Cloud)
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
+    iosClientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
+    androidClientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
+  });
+
+  // Este efecto "escucha" cuando Google nos responde con la llave de acceso
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      iniciarSesionConCredencialGoogle(credential);
+    } else if (response?.type === 'error') {
+      setErrorMessage("Error al conectar con Google.");
+      setIsGoogleLoading(false);
+    }
+  }, [response]);
+
+  // Función que toma la llave de Google y la mete a Firebase
+  const iniciarSesionConCredencialGoogle = async (credential) => {
+    setIsGoogleLoading(true);
+    setErrorMessage('');
+    try {
+      const userCredential = await signInWithCredential(auth, credential);
+      const user = userCredential.user;
+
+      // Verificamos si este usuario ya existe en tu base de datos
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // Si ya existe, vemos si es admin o usuario normal
+        const userData = docSnap.data();
+        if (userData.rol === 'admin') {
+          router.replace('/admin-dashboard');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // Si es la PRIMERA VEZ que entra con Google, le creamos su documento automáticamente
+        await setDoc(docRef, {
+          username: user.displayName || 'Usuario de Google',
+          email: user.email,
+          profilePicture: user.photoURL || '',
+          rol: 'user' // Por defecto lo hacemos usuario estándar
+        });
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      console.error("Error iniciando sesión con Google en Firebase:", error);
+      setErrorMessage(t('login.errors.generalError') + error.message);
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     setErrorMessage('');
     const correoIngresado = email.trim().toLowerCase();
 
-    // Traducción aplicada aquí
     if (!correoIngresado || !password) {
       setErrorMessage(t('login.errors.emptyFields'));
       return;
@@ -40,21 +103,16 @@ export default function LoginScreen() {
 
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        
         if (userData.rol === 'admin') {
           router.replace('/admin-dashboard');
         } else {
           router.replace('/(tabs)');
         }
       } else {
-        // Traducción aplicada aquí
         setErrorMessage(t('login.errors.profileNotFound'));
       }
-
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
-      
-      // Traducciones aplicadas en el manejo de errores de Firebase
       if (error.code === 'auth/invalid-email') {
         setErrorMessage(t('login.errors.invalidEmail'));
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
@@ -65,14 +123,6 @@ export default function LoginScreen() {
     } finally {
       setCargando(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    setIsGoogleLoading(true);
-    setTimeout(() => {
-      setIsGoogleLoading(false); 
-      router.replace('/(tabs)'); 
-    }, 2000);
   };
 
   return (
@@ -112,7 +162,7 @@ export default function LoginScreen() {
           editable={!cargando && !isGoogleLoading}
         />
         
-        <TouchableOpacity onPress={() => router.push('/recover')} disabled={cargando}>
+        <TouchableOpacity onPress={() => router.push('/recover')} disabled={cargando || isGoogleLoading}>
           <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
@@ -136,10 +186,14 @@ export default function LoginScreen() {
 
         <Text style={styles.orText}>{t('login.orText')}</Text>
 
+        {/* 👇 BOTÓN DE GOOGLE ACTUALIZADO 👇 */}
         <TouchableOpacity 
           style={styles.googleButton} 
-          onPress={handleGoogleLogin}
-          disabled={isGoogleLoading || cargando}
+          onPress={() => {
+            setIsGoogleLoading(true);
+            promptAsync(); 
+          }}
+          disabled={!request || isGoogleLoading || cargando}
         >
           {isGoogleLoading ? (
             <ActivityIndicator size="small" color="#47525E" />
@@ -151,7 +205,7 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.registerContainer} onPress={() => router.push('/register')} disabled={cargando}>
+        <TouchableOpacity style={styles.registerContainer} onPress={() => router.push('/register')} disabled={cargando || isGoogleLoading}>
           <Text style={styles.registerText}>
             {t('login.registerPrompt')} <Text style={styles.registerTextBold}>{t('login.registerLink')}</Text>
           </Text>

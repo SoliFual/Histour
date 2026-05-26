@@ -85,7 +85,7 @@
     },
     "alerts": {
       "emptyRating": "Por favor, selecciona al menos una estrella para calificar.",
-      "successRating": "¡Calificación de {{rating}} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio."
+      "successRating": "¡Gracias! Tu calificación de {{rating}} estrellas se ha guardado con éxito."
     }
   },
   "privacyPolicy": {
@@ -228,7 +228,7 @@
     },
     "alerts": {
       "emptyRating": "Por favor, selecciona al menos una estrella para calificar.",
-      "successRating": "¡Calificación de {{rating}} estrellas enviada a la base de datos! \n\nEl sistema promediará esto y actualizará la etiqueta del sitio."
+      "successRating": "¡Gracias! Tu calificación de {{rating}} estrellas se ha guardado con éxito."
     }
   },
   "adminViewUserProfile": {
@@ -377,11 +377,11 @@
   },
  "adminAddMonument": {
     "categories": {
-      "museos": "Museos",
-      "iglesias": "Iglesias",
-      "monumentos": "Monumentos", 
-      "otros": "Otros"
-    },
+    "museums": "Museos",
+    "monuments": "Monumentos",
+    "churches": "Iglesias",
+    "others": "Otros"
+  },
   "buttons": {
     "addImages": "Agregar Imágenes (Máx. 3)",
     "imagesLoaded": "{{count}} imágenes cargadas ✅",
@@ -468,7 +468,8 @@
       "minuteLabel": "Minutos:",
       "cancelButton": "Cancelar",
       "continueButton": "Continuar"
-    }
+    },
+    "newBadge": "Nuevo"
   },
   "about": {
     "title": "Acerca de Histour",

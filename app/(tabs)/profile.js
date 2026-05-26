@@ -1,50 +1,78 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../../context/ThemeContext'; // Conexión al tema global
-// 1. Importamos el traductor
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
-const userData = {
-  username: 'Fulanita102',
-  lugaresFavoritos: 0,
-};
+// 1. IMPORTACIONES DE FIREBASE Y FAVORITOS
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFavorites } from '../../context/FavoritesContext';
+import { auth, db } from '../../firebaseConfig';
 
 export default function ProfileScreen() {
   const { theme, colors, setTheme } = useTheme(); 
   const [showThemeOptions, setShowThemeOptions] = useState(false);
-
-  // 2. Activamos el traductor
   const { t } = useTranslation();
+  
+  // Extraemos los favoritos directamente del contexto global
+  const { favorites } = useFavorites();
 
-  const handleLogout = () => router.replace('/login');
+  // ESTADOS DEL USUARIO
+  const [usuarioBD, setUsuarioBD] = useState(null);
+  const [cargando, setCargando] = useState(true);
 
-  // 👇 FUNCIÓN PARA ELIMINAR CUENTA (COMPATIBLE CON WEB Y CELULAR) 👇
+  // EFECTO: DESCARGAR LOS DATOS DEL PERFIL
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            setUsuarioBD(docSnap.data());
+          }
+        } catch (error) {
+          console.error("Error al cargar datos del perfil:", error);
+        }
+      } else {
+        setUsuarioBD(null);
+      }
+      setCargando(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/login');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      alert("Hubo un error al cerrar sesión.");
+    }
+  };
+
   const handleEliminarCuenta = () => {
     if (Platform.OS === 'web') {
-      // Confirmación nativa del navegador web
       const confirmarWeb = window.confirm(t('userProfile.alerts.deletePromptWeb'));
       if (confirmarWeb) {
         alert(t('userProfile.alerts.deleteSuccessWeb'));
-        // [AQUÍ IRÁ LA PETICIÓN A LA BASE DE DATOS EN EL FUTURO]
         router.replace('/login');
       }
     } else {
-      // Confirmación nativa para Android y iOS
       Alert.alert(
         t('userProfile.alerts.deleteTitle'),
         t('userProfile.alerts.deletePrompt'),
         [
-          {
-            text: t('userProfile.alerts.cancel'),
-            style: 'cancel', // Solo cierra la ventana
-          },
+          { text: t('userProfile.alerts.cancel'), style: 'cancel' },
           {
             text: t('userProfile.alerts.accept'),
-            style: 'destructive', // Pone el texto en rojo en sistemas compatibles
+            style: 'destructive', 
             onPress: () => {
-              // [AQUÍ IRÁ LA PETICIÓN A LA BASE DE DATOS EN EL FUTURO]
               router.replace('/login');
             },
           },
@@ -52,6 +80,14 @@ export default function ProfileScreen() {
       );
     }
   };
+
+  if (cargando) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -64,13 +100,20 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* DETALLES DE USUARIO */}
+      {/* DETALLES DE USUARIO REALES */}
       <View style={styles.userInfoContainer}>
-        <Ionicons name="person-circle" size={100} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.avatar} />
+        {usuarioBD?.profilePicture ? (
+          <Image source={{ uri: usuarioBD.profilePicture }} style={styles.avatarImage} />
+        ) : (
+          <Ionicons name="person-circle" size={100} color={theme === 'light' ? '#333333' : '#FFFFFF'} style={styles.avatarIcon} />
+        )}
+        
         <View style={styles.userDetails}>
-          <Text style={[styles.username, { color: colors.primary }]}>{userData.username}</Text>
+          <Text style={[styles.username, { color: colors.primary }]}>
+            {usuarioBD?.username || 'Usuario'}
+          </Text>
           <Text style={[styles.userStat, { color: colors.primary }]}>
-            {t('userProfile.favoritePlaces', { count: userData.lugaresFavoritos })}
+            {t('userProfile.favoritePlaces', { count: favorites.length })}
           </Text>
         </View>
       </View>
@@ -84,13 +127,11 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>{t('userProfile.settings.title')}</Text>
         </View>
 
-        {/* 1. Botón Idioma */}
         <TouchableOpacity style={styles.listItem} onPress={() => router.push('/language')}>
           <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.language')}</Text>
           <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* 2. Botón Tema */}
         <TouchableOpacity style={styles.listItem} onPress={() => setShowThemeOptions(!showThemeOptions)}>
           <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.theme')}</Text>
           <View style={styles.themeSelector}>
@@ -119,7 +160,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* 3. Botón Modificar Perfil */}
         <TouchableOpacity style={styles.listItem} onPress={() => router.push('/edit-profile')}>
           <Text style={[styles.listItemText, { color: colors.textSecondary }]}>{t('userProfile.settings.editProfile')}</Text>
           <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
@@ -166,7 +206,11 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
   logoutText: { fontSize: 16, fontWeight: 'bold', textDecorationLine: 'underline' },
   userInfoContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
-  avatar: { marginRight: 20, marginLeft: -5 },
+  
+  /* NUEVOS ESTILOS PARA LA FOTO */
+  avatarIcon: { marginRight: 20, marginLeft: -5 },
+  avatarImage: { width: 90, height: 90, borderRadius: 45, marginRight: 20, backgroundColor: '#DDDDDD' },
+  
   userDetails: { justifyContent: 'center' },
   username: { fontSize: 24, fontWeight: 'bold', marginBottom: 5 },
   userStat: { fontSize: 14, fontWeight: 'bold', marginBottom: 3 },

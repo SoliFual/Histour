@@ -1,19 +1,22 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-// 1. Importamos el traductor
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+// 1. IMPORTACIONES DE FIREBASE
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 
 export default function RecoverScreen() {
   const [email, setEmail] = useState('');
   
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); 
+  const [cargando, setCargando] = useState(false); // 👈 Nuevo estado de carga
 
-  // 2. Activamos el traductor
   const { t } = useTranslation();
 
-  const handleRecover = () => {
+  const handleRecover = async () => {
     // 1. Limpiamos mensajes anteriores
     setMessage('');
     setMessageType('');
@@ -33,15 +36,35 @@ export default function RecoverScreen() {
       return;
     }
 
-    // Si todo está bien, simulamos que enviamos el correo
-    console.log("Enviando correo de recuperación a:", email);
-    setMessage(t('recover.successMessage'));
-    setMessageType('success');
-    
-    // Opcional: Después de 3.5 segundos, lo regresamos al login automáticamente
-    setTimeout(() => {
-      router.replace('/login');
-    }, 3500);
+    // 4. Lógica real con Firebase
+    setCargando(true);
+    try {
+      // Firebase se encarga de enviar el correo automáticamente
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      
+      setMessage(t('recover.successMessage'));
+      setMessageType('success');
+      
+      // Después de 3.5 segundos, lo regresamos al login automáticamente
+      setTimeout(() => {
+        router.replace('/login');
+      }, 3500);
+
+    } catch (error) {
+      console.error("Error al enviar correo de recuperación:", error);
+      setMessageType('error');
+      
+      // Manejo de errores de Firebase
+      if (error.code === 'auth/user-not-found') {
+        setMessage("No hay ninguna cuenta registrada con este correo.");
+      } else if (error.code === 'auth/invalid-email') {
+        setMessage(t('recover.errors.invalidEmail'));
+      } else {
+        setMessage("Hubo un error al intentar enviar el correo. Inténtalo de nuevo más tarde.");
+      }
+    } finally {
+      setCargando(false);
+    }
   };
 
   const handleGoToLogin = () => {
@@ -74,6 +97,7 @@ export default function RecoverScreen() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!cargando} // 👈 Bloqueamos el input si está cargando
         />
 
         {/* MENSAJE DINÁMICO */}
@@ -85,11 +109,19 @@ export default function RecoverScreen() {
           </View>
         ) : null}
 
-        <TouchableOpacity style={styles.recoverButton} onPress={handleRecover}>
-          <Text style={styles.recoverButtonText}>{t('recover.button')}</Text>
+        <TouchableOpacity 
+          style={[styles.recoverButton, cargando && { opacity: 0.7 }]} 
+          onPress={handleRecover}
+          disabled={cargando} // 👈 Bloqueamos el botón para evitar doble envío
+        >
+          {cargando ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.recoverButtonText}>{t('recover.button')}</Text>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginLinkContainer} onPress={handleGoToLogin}>
+        <TouchableOpacity style={styles.loginLinkContainer} onPress={handleGoToLogin} disabled={cargando}>
           <Text style={styles.loginLinkText}>
             {t('recover.loginPrompt')} <Text style={styles.loginLinkTextBold}>{t('recover.loginLink')}</Text>
           </Text>

@@ -1,60 +1,247 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
-// 1. Importamos el traductor
-import { useTranslation } from 'react-i18next';
+
+// IMPORTACIÓN DE AUDIO (¡NUEVO!)
+import { Audio } from 'expo-av';
+
+// IMPORTACIONES DE FIREBASE
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
 export default function AudioModeScreen() {
   const { colors } = useTheme();
   
-  // Atrapamos la información del sitio
-  const { title, image, image2 } = useLocalSearchParams();
-
-  // 2. Activamos el traductor
-  const { t } = useTranslation();
-
-  // Estados interactivos
-  // Usamos el contexto global
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language ? i18n.language.substring(0, 2) : 'es'; 
   
-  // Verificamos si este lugar específico está en la lista
-  const isCurrentFavorite = isFavorite(title as string);
-  const [rating, setRating] = useState(0);
+  const params = useLocalSearchParams();
+  
+  const desempaquetarSeguro = (val) => {
+    if (!val) return '';
+    let str = Array.isArray(val) ? val[0] : val;
+    try { return decodeURIComponent(str); } catch (e) { return str; }
+  };
+  
+  const idRecibido = desempaquetarSeguro(params.id);
+  const tituloRecibido = desempaquetarSeguro(params.title);
 
-  // Función que simula el envío a la base de datos
-  const enviarCalificacion = () => {
+  // ESTADOS DE DATOS
+  const [datosBD, setDatosBD] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [idDocumento, setIdDocumento] = useState(idRecibido); 
+
+  // ESTADOS DE AUDIO (¡NUEVOS!)
+  const [sound, setSound] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // Para mover la barra real
+  const [cargandoAudio, setCargandoAudio] = useState(false);
+
+  // ESTADOS DE FAVORITOS Y RATING
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const isCurrentFavorite = isFavorite(idRecibido || tituloRecibido);
+  const [rating, setRating] = useState(0);
+  const [enviando, setEnviando] = useState(false); 
+
+  // 1. DESCARGAMOS LA INFO DEL SITIO
+  useEffect(() => {
+    const buscarMonumentoEnBD = async () => {
+      if (!idRecibido) {
+        setCargando(false);
+        return;
+      }
+      try {
+        const docRef = doc(db, "monuments", idRecibido);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setDatosBD(data);
+
+          const user = auth.currentUser;
+          if (user && data.userRatings && data.userRatings[user.uid]) {
+            setRating(data.userRatings[user.uid]);
+          }
+        }
+      } catch (error) {
+        console.error("Error descargando datos para Audio Mode:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    buscarMonumentoEnBD();
+  }, [idRecibido]);
+
+  // 👇 2. LÓGICA DE REPRODUCCIÓN DE AUDIO REAL 👇
+  const urlAudioBilingue = datosBD?.audiosUrls?.[currentLang] || datosBD?.audiosUrls?.es || '';
+
+  const reproducirPausarAudio = async () => {
+    if (!urlAudioBilingue) {
+      alert("Lo sentimos, no hay audio disponible para este sitio en este idioma.");
+      return;
+    }
+
+    try {
+      if (sound) {
+        // Si ya está cargado, lo pausamos o despausamos
+        if (isPlaying) {
+          await sound.pauseAsync();
+          setIsPlaying(false);
+        } else {
+          await sound.playAsync();
+          setIsPlaying(true);
+        }
+      } else {
+        // Si no está cargado, lo descargamos y le damos Play
+        setCargandoAudio(true);
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: urlAudioBilingue },
+          { shouldPlay: true },
+          actualizarProgresoVisual
+        );
+        setSound(newSound);
+        setIsPlaying(true);
+        setCargandoAudio(false);
+      }
+    } catch (error) {
+      console.error("Error con el reproductor:", error);
+      setCargandoAudio(false);
+      alert("Hubo un problema al intentar reproducir el audio.");
+    }
+  };
+
+  const actualizarProgresoVisual = (status) => {
+    if (status.isLoaded) {
+      // Calculamos qué porcentaje del audio ha avanzado (0 a 1)
+      setProgress(status.positionMillis / status.durationMillis);
+      
+      // Si el audio terminó, lo regresamos al inicio
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+        setProgress(0);
+        sound?.setPositionAsync(0);
+      }
+    }
+  };
+
+  // IMPORTANTE: Limpiamos la memoria y apagamos el audio si el turista se sale de la pantalla
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+
+  // 3. SISTEMA DE CALIFICACIÓN ÚNICA POR USUARIO
+  const enviarCalificacion = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Debes iniciar sesión para calificar.");
+      return;
+    }
     if (rating === 0) {
       alert(t('audioMode.alerts.emptyRating'));
       return;
     }
+    if (!idDocumento) return;
 
-    // AQUÍ IRÁ TU CÓDIGO DE BASE DE DATOS EN EL FUTURO. 
-    // Inyectamos la calificación en el texto traducido
-    alert(t('audioMode.alerts.successRating', { rating }));
-    
-    // Opcional: regresar las estrellas a 0 después de calificar
-    // setRating(0); 
+    setEnviando(true); 
+    try {
+      const uid = user.uid;
+      const calificacionActual = datosBD.calificacionPromedio || 0;
+      const totalVotosActuales = datosBD.totalVotos || 0;
+      const userRatings = datosBD.userRatings || {};
+      const votoAnterior = userRatings[uid];
+
+      let nuevoTotalVotos = totalVotosActuales;
+      let nuevoPromedio = 0;
+      const sumaTotalAnterior = calificacionActual * totalVotosActuales;
+
+      if (votoAnterior) {
+        const sumaCorregida = sumaTotalAnterior - votoAnterior + rating;
+        nuevoPromedio = nuevoTotalVotos === 0 ? rating : sumaCorregida / nuevoTotalVotos;
+      } else {
+        nuevoTotalVotos += 1;
+        const nuevaSuma = sumaTotalAnterior + rating;
+        nuevoPromedio = nuevaSuma / nuevoTotalVotos;
+      }
+
+      userRatings[uid] = rating;
+
+      const docRef = doc(db, "monuments", idDocumento);
+      await updateDoc(docRef, {
+        calificacionPromedio: nuevoPromedio,
+        totalVotos: nuevoTotalVotos,
+        rating: nuevoPromedio, 
+        promedio: nuevoPromedio,
+        userRatings: userRatings 
+      });
+
+      alert(t('audioMode.alerts.successRating', { rating }));
+      
+      setDatosBD(prev => ({
+        ...prev,
+        calificacionPromedio: nuevoPromedio,
+        totalVotos: nuevoTotalVotos,
+        userRatings: userRatings
+      }));
+    } catch (error) {
+      console.error("Error al calificar:", error);
+      alert("Error al enviar calificación.");
+    } finally {
+      setEnviando(false);
+    }
   };
-  const [isPlaying, setIsPlaying] = useState(false); // Controla el botón de Play/Pausa
 
-  // Paleta de colores exacta de tu PDF
   const COLOR_LIGHT_BLUE = '#4E97D1';
   const COLOR_DARK_BLUE = '#2260A3';
+
+  if (cargando) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLOR_LIGHT_BLUE} />
+      </View>
+    );
+  }
+
+  // 4. EXTRACCIÓN DE IMÁGENES Y TEXTOS BILINGÜES
+  let img1 = desempaquetarSeguro(params.image) || 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400';
+  let img2 = desempaquetarSeguro(params.image2) || 'https://images.unsplash.com/photo-1548625361-ec85d5809eb3?q=80&w=600';
+  let img3 = 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?q=80&w=400';
+
+  if (datosBD?.imagenesUrls && Array.isArray(datosBD.imagenesUrls)) {
+    if (datosBD.imagenesUrls[0]) img1 = typeof datosBD.imagenesUrls[0] === 'object' ? datosBD.imagenesUrls[0].uri : datosBD.imagenesUrls[0];
+    if (datosBD.imagenesUrls[1]) img2 = typeof datosBD.imagenesUrls[1] === 'object' ? datosBD.imagenesUrls[1].uri : datosBD.imagenesUrls[1];
+    if (datosBD.imagenesUrls[2]) img3 = typeof datosBD.imagenesUrls[2] === 'object' ? datosBD.imagenesUrls[2].uri : datosBD.imagenesUrls[2];
+  } else if (datosBD?.image) {
+    img1 = typeof datosBD.image === 'object' ? datosBD.image.uri : datosBD.image;
+  }
+
+  const carpetaTraducciones = datosBD?.traducciones || {};
+  const datosIdioma = carpetaTraducciones[currentLang] || datosBD?.[currentLang] || datosBD?.es || datosBD || {};
+  const tituloFinal = datosIdioma.nombre || datosIdioma.name || datosBD?.nombre || datosBD?.name || tituloRecibido;
+
+  // Calculamos el porcentaje real para la barra visual (ej. "45%")
+  const progressPercent = `${(progress * 100) || 0}%`;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       
-      {/* 1. CABECERA */}
+      {/* CABECERA */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerLeft}>
           <Ionicons name="arrow-back" size={28} color={COLOR_LIGHT_BLUE} />
           <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.title')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity onPress={() => toggleFavorite({ title, image })}>
+        <TouchableOpacity onPress={() => toggleFavorite({ id: idDocumento, title: tituloFinal, image: img1 })}>
           <Ionicons 
             name={isCurrentFavorite ? "heart" : "heart-outline"} 
             size={35} 
@@ -65,60 +252,68 @@ export default function AudioModeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* 2. REPRODUCTOR DE AUDIO (Caja Azul Oscuro) */}
+        {/* TÍTULO GRANDE HASTA ARRIBA */}
+        <Text style={[styles.monumentTitle, { color: colors.text }]}>{tituloFinal}</Text>
+        
+        {/* REPRODUCTOR DE AUDIO REAL */}
         <View style={[styles.audioBox, { backgroundColor: COLOR_DARK_BLUE }]}>
           <View style={styles.audioTopRow}>
-            {/* Inyectamos el nombre del sitio en el reproductor */}
             <Text style={styles.audioTitle} numberOfLines={1}>
-              {t('audioMode.audioTitle', { title })}
+              {t('audioMode.audioTitle', { title: tituloFinal })}
             </Text>
             
-            <TouchableOpacity onPress={() => setIsPlaying(!isPlaying)} style={styles.playButtonWrapper}>
-              <Ionicons 
-                name={isPlaying ? "pause" : "play"} 
-                size={22} 
-                color={COLOR_DARK_BLUE} 
-              />
+            <TouchableOpacity onPress={reproducirPausarAudio} style={styles.playButtonWrapper}>
+              {cargandoAudio ? (
+                <ActivityIndicator size="small" color={COLOR_DARK_BLUE} />
+              ) : (
+                <Ionicons 
+                  name={isPlaying ? "pause" : "play"} 
+                  size={22} 
+                  color={COLOR_DARK_BLUE} 
+                  style={{ marginLeft: isPlaying ? 0 : 2 }} // Centra el ícono de play
+                />
+              )}
             </TouchableOpacity>
           </View>
           
-          {/* Barra de progreso visual simulada */}
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: isPlaying ? '60%' : '10%' }]} />
-            <View style={[styles.progressDot, { left: isPlaying ? '60%' : '10%' }]} />
+            <View style={[styles.progressBarFill, { width: progressPercent }]} />
+            <View style={[styles.progressDot, { left: progressPercent }]} />
           </View>
         </View>
 
-        {/* 3. GALERÍA DE IMÁGENES (Marcos Azul Claro) */}
+        {/* 3 RECTÁNGULOS DE IMÁGENES */}
         <View style={[styles.imageContainer, { borderColor: COLOR_LIGHT_BLUE }]}>
-          <Image source={{ uri: image as string }} style={styles.image} />
+          <Image source={{ uri: img1 }} style={styles.image} />
         </View>
 
         <View style={[styles.imageContainer, { borderColor: COLOR_LIGHT_BLUE }]}>
-          {/* Si no mandan image2, repetimos la primera para evitar errores */}
-          <Image source={{ uri: (image2 || image) as string }} style={styles.image} />
+          <Image source={{ uri: img2 }} style={styles.image} />
         </View>
 
-        {/* 4. BOTÓN: MOSTRAR LÍNEA DEL TIEMPO */}
+        <View style={[styles.imageContainer, { borderColor: COLOR_LIGHT_BLUE }]}>
+          <Image source={{ uri: img3 }} style={styles.image} />
+        </View>
+
+        {/* BOTÓN LÍNEA DEL TIEMPO */}
         <TouchableOpacity 
           style={[styles.timelineButton, { borderColor: COLOR_LIGHT_BLUE }]}
           onPress={() => router.push({
             pathname: '/timeline',
             params: {
-              title: title, 
-              timelineImage: 'https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=600&auto=format&fit=crop'
+              title: tituloFinal, 
+              timelineImage: encodeURIComponent(img1)
             }
           })}
         >
           <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.buttons.timeline')}</Text>
         </TouchableOpacity>
 
-        {/* 5. SECCIÓN DE CALIFICACIÓN */}
+        {/* SECCIÓN DE CALIFICACIÓN */}
         <View style={styles.ratingSection}>
-          
           <View style={styles.starsContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => setRating(star)}>
+              <TouchableOpacity key={star} onPress={() => setRating(star)} disabled={enviando}>
                 <Ionicons 
                   name={star <= rating ? "star" : "star-outline"} 
                   size={32} 
@@ -128,12 +323,16 @@ export default function AudioModeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-
-         <TouchableOpacity 
-            style={[styles.rateButton, { borderColor: COLOR_LIGHT_BLUE }]}
+          <TouchableOpacity 
+            style={[styles.rateButton, { borderColor: enviando ? '#A0A0A0' : COLOR_LIGHT_BLUE }]}
             onPress={enviarCalificacion}
+            disabled={enviando}
           >
-            <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.buttons.rate')}</Text>
+            {enviando ? (
+              <ActivityIndicator size="small" color={COLOR_LIGHT_BLUE} />
+            ) : (
+              <Text style={[styles.rateText, { color: COLOR_LIGHT_BLUE }]}>{t('audioMode.buttons.rate')}</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -168,6 +367,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
+  monumentTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    textAlign: 'center',
+    marginBottom: 25,
+    marginTop: 5,
+  },
   
   /* ESTILOS DEL REPRODUCTOR DE AUDIO */
   audioBox: {
@@ -191,12 +398,11 @@ const styles = StyleSheet.create({
   },
   playButtonWrapper: {
     backgroundColor: '#FFFFFF',
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingLeft: 2, 
   },
   progressBarBg: {
     height: 4,
@@ -225,6 +431,8 @@ const styles = StyleSheet.create({
     height: 180,
     borderWidth: 6,
     marginBottom: 20,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
@@ -251,6 +459,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    padding: 15,
+    borderRadius: 15,
   },
   starsContainer: {
     flexDirection: 'row',

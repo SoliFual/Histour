@@ -85,7 +85,7 @@
     },
     "alerts": {
       "emptyRating": "Please select at least one star to rate.",
-      "successRating": "Rating of {{rating}} stars sent to the database! \n\nThe system will average this and update the site's tag."
+      "successRating": "Thank you! Your {{rating}}-star rating has been successfully saved."
     }
   },
   "privacyPolicy": {
@@ -228,7 +228,7 @@
     },
     "alerts": {
       "emptyRating": "Please select at least one star to rate.",
-      "successRating": "Rating of {{rating}} stars sent to the database! \n\nThe system will average this and update the site's tag."
+      "successRating": "Thank you! Your {{rating}}-star rating has been successfully saved."
     }
   },
   "adminViewUserProfile": {
@@ -377,10 +377,10 @@
   },
   "adminAddMonument": {
     "categories": {
-    "museos": "Museums",
-    "iglesias": "Churches",
-    "monumentos": "Monuments",
-    "otros": "Others"
+    "museums": "Museums",
+    "monuments": "Monuments",
+    "churches": "Churches",
+    "others": "Others"
   },
   "buttons": {
     "addImages": "Add Images (Max 3)",
@@ -468,7 +468,8 @@
       "minuteLabel": "Minutes:",
       "cancelButton": "Cancel",
       "continueButton": "Continue"
-    }
+    },
+      "newBadge": "New"
   },
   "about": {
     "title": "About Histour",

@@ -1,18 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useTheme } from '../../context/ThemeContext';
-// 1. Importamos el traductor
-import { useTranslation } from 'react-i18next';
 
 export default function FavoritesScreen() {
   const { colors } = useTheme();
-  
-  // 2. Activamos el traductor
   const { t } = useTranslation();
-
   const { favorites } = useFavorites();
 
   const renderItem = ({ item }) => (
@@ -22,9 +18,9 @@ export default function FavoritesScreen() {
       onPress={() => router.push({
         pathname: '/site-details',
         params: {
+          id: item.id, // ¡ESTO ES VITAL! Ahora enviamos el ID para que no falle la otra pantalla
           title: item.title,
           image: item.image,
-          // Inyectamos el nombre del lugar en la descripción traducida
           description: t('favorites.description', { title: item.title })
         }
       })}
@@ -64,7 +60,7 @@ export default function FavoritesScreen() {
       ) : (
         <FlatList
           data={favorites}
-          keyExtractor={(item) => item.title}
+          keyExtractor={(item) => item.id || item.title} // Aseguramos que la lista use el ID
           renderItem={renderItem}
           numColumns={2} 
           contentContainerStyle={styles.listContainer}

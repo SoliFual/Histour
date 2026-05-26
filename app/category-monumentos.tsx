@@ -1,29 +1,69 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-// 1. Importamos el traductor
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
-const MOCK_DATA = [
-  { id: '1', title: 'La Catedral', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400' },
-  { id: '2', title: 'El Hospicio Cabañas', category: 'Museos', rating: '4.9', image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?q=80&w=400' },
-  { id: '3', title: 'Museo Regional', category: 'Museos', rating: '4.8', image: 'https://images.unsplash.com/photo-1566121933407-3c7ccdd26763?q=80&w=400' },
-  { id: '4', title: 'Templo Expiatorio', category: 'Iglesia', rating: '5.0', image: 'https://images.unsplash.com/photo-1584630019672-87000100f73b?q=80&w=400' },
-  { id: '5', title: 'Rotonda', category: 'Monumentos', rating: '4.7', image: 'https://images.unsplash.com/photo-1570116494159-00b8bb5a3406?q=80&w=400' },
-  { id: '6', title: 'Arcos Vallarta', category: 'Monumentos', rating: '4.9', image: 'https://images.unsplash.com/photo-1538089408581-224855bd29ba?q=80&w=400' },
-  { id: '7', title: 'MUSA', category: 'Museos', rating: '5.0', image: 'https://images.unsplash.com/photo-1594904351111-a072f80b1a71?q=80&w=400' },
-];
+// IMPORTACIONES DE FIREBASE
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function CategoryMonumentosScreen() {
   const { colors } = useTheme();
-
-  // 2. Activamos el traductor
   const { t } = useTranslation();
 
-  // Filtrado exclusivo para Monumentos
-  const monumentosFiltrados = MOCK_DATA.filter(lugar => lugar.category === 'Monumentos');
+  // ESTADOS REALES
+  const [monumentosLista, setMonumentosLista] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  // DESCARGAR Y FILTRAR DESDE FIREBASE
+  useEffect(() => {
+    const cargarMonumentos = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "monuments"));
+        const monumentosTemp = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const categoriaDB = (data.category || data.categoria || '').toLowerCase();
+
+          // 👇 Filtramos buscando específicamente la palabra "monumento" 👇
+          if (categoriaDB.includes('monumento')) {
+            
+            // Extraer la imagen de forma segura
+            let primeraImagen = 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400'; 
+            if (data.imagenesUrls && Array.isArray(data.imagenesUrls) && data.imagenesUrls.length > 0) primeraImagen = data.imagenesUrls[0];
+            else if (data.image) primeraImagen = data.image;
+            if (typeof primeraImagen === 'object' && primeraImagen.uri) primeraImagen = primeraImagen.uri;
+
+            // Extraer calificación
+            let calificacionDB = data.calificacionPromedio || data.promedio || data.rating || data.calificacion;
+            let ratingFinal = calificacionDB ? Number(calificacionDB).toFixed(1) : t('addSite.newBadge', 'Nuevo');
+
+            // Extraer título
+            let title = data.name || data.nombre || 'Sin nombre';
+
+            monumentosTemp.push({
+              id: doc.id,
+              title: title,
+              rating: ratingFinal,
+              image: primeraImagen,
+              description: data.description || data.descripcion || t('categoryMonumentos.description', { title: title })
+            });
+          }
+        });
+
+        setMonumentosLista(monumentosTemp);
+      } catch (error) {
+        console.error("Error al cargar monumentos:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarMonumentos();
+  }, [t]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -33,47 +73,54 @@ export default function CategoryMonumentosScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-        
-        {/* Usamos el traductor para el título de la cabecera */}
         <Text style={styles.headerTitle}>{t('categoryMonumentos.title')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollArea}>
-        <View style={styles.gridRow}>
-          {monumentosFiltrados.map((lugar) => (
-            <TouchableOpacity 
-              key={lugar.id} 
-              style={styles.card} 
-              onPress={() => router.push({
-                pathname: '/site-details',
-                params: {
-                  title: lugar.title,
-                  image: lugar.image,
-                  // Inyectamos el título en el texto de respaldo traducido
-                  description: t('categoryMonumentos.description', { title: lugar.title })
-                }
-              })}
-              activeOpacity={0.8}
-            >
-              <ImageBackground source={{ uri: lugar.image }} style={styles.cardImage} imageStyle={{ borderRadius: 8 }}>
-                <View style={styles.ratingBadge}>
-                  <Ionicons name="star" size={10} color="#FFFFFF" style={styles.starIcon} />
-                  <Text style={styles.ratingText}>{lugar.rating}</Text>
-                </View>
-                <View style={styles.cardTitleOverlay}>
-                  <Text style={styles.cardTitleText} numberOfLines={1}>{lugar.title}</Text>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-          ))}
+      {/* CONTENIDO (Carga o Lista) */}
+      {cargando ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ marginTop: 10, color: colors.textSecondary }}>Cargando monumentos...</Text>
         </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollArea}>
+          <View style={styles.gridRow}>
+            {monumentosLista.map((lugar) => (
+              <TouchableOpacity 
+                key={lugar.id} 
+                style={styles.card} 
+                onPress={() => router.push({
+                  pathname: '/site-details',
+                  params: {
+                    id: lugar.id,
+                    title: lugar.title,
+                    // Empaquetamos la imagen para que Expo Router viaje seguro
+                    image: encodeURIComponent(lugar.image),
+                    description: encodeURIComponent(lugar.description)
+                  }
+                })}
+                activeOpacity={0.8}
+              >
+                <ImageBackground source={{ uri: lugar.image }} style={styles.cardImage} imageStyle={{ borderRadius: 8 }}>
+                  <View style={styles.ratingBadge}>
+                    <Ionicons name="star" size={10} color="#FFFFFF" style={styles.starIcon} />
+                    <Text style={styles.ratingText}>{lugar.rating}</Text>
+                  </View>
+                  <View style={styles.cardTitleOverlay}>
+                    <Text style={styles.cardTitleText} numberOfLines={1}>{lugar.title}</Text>
+                  </View>
+                </ImageBackground>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {monumentosFiltrados.length === 0 && (
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            {t('categoryMonumentos.emptyText')}
-          </Text>
-        )}
-      </ScrollView>
+          {monumentosLista.length === 0 && (
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {t('categoryMonumentos.emptyText')}
+            </Text>
+          )}
+        </ScrollView>
+      )}
 
     </View>
   );
