@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
-// 1. IMPORTACIONES DE FIREBASE Y FAVORITOS
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+// 1. IMPORTACIONES DE FIREBASE Y FAVORITOS (Actualizadas)
+import { deleteUser, onAuthStateChanged, signOut } from 'firebase/auth';
+import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { useFavorites } from '../../context/FavoritesContext';
 import { auth, db } from '../../firebaseConfig';
 
@@ -56,12 +56,42 @@ export default function ProfileScreen() {
     }
   };
 
+  // 👇 NUEVA FUNCIÓN PARA ELIMINAR DE FIREBASE 👇
+  const procesarEliminacion = async () => {
+    setCargando(true);
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        // 1. Borramos sus datos de la base de datos (Firestore)
+        await deleteDoc(doc(db, "users", user.uid));
+        
+        // 2. Borramos su acceso del sistema (Auth)
+        await deleteUser(user);
+        
+        // 3. Lo mandamos al Login
+        if (Platform.OS === 'web') alert(t('userProfile.alerts.deleteSuccessWeb', 'Cuenta eliminada con éxito.'));
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error("Error al eliminar la cuenta:", error);
+      setCargando(false);
+      // Firebase requiere que el login sea reciente para borrar una cuenta
+      if (error.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          "Sesión caducada", 
+          "Por seguridad, debes haber iniciado sesión recientemente para eliminar tu cuenta. Cierra sesión, vuelve a entrar e inténtalo de nuevo."
+        );
+      } else {
+        Alert.alert("Error", "Hubo un problema al eliminar tu cuenta.");
+      }
+    }
+  };
+
   const handleEliminarCuenta = () => {
     if (Platform.OS === 'web') {
       const confirmarWeb = window.confirm(t('userProfile.alerts.deletePromptWeb'));
       if (confirmarWeb) {
-        alert(t('userProfile.alerts.deleteSuccessWeb'));
-        router.replace('/login');
+        procesarEliminacion(); // Llamamos a la función real
       }
     } else {
       Alert.alert(
@@ -72,9 +102,7 @@ export default function ProfileScreen() {
           {
             text: t('userProfile.alerts.accept'),
             style: 'destructive', 
-            onPress: () => {
-              router.replace('/login');
-            },
+            onPress: procesarEliminacion, // Llamamos a la función real
           },
         ]
       );

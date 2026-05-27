@@ -119,11 +119,6 @@
       }
     }
   },
-  "permissions": {
-    "prompt": "¿Quieres permitir que Histour haga fotos y grabe videos?",
-    "allow": "PERMITIR",
-    "deny": "DENEGAR"
-  },
   "modal": {
     "title": "Este es un modal",
     "link": "Ir a la pantalla principal"
@@ -505,6 +500,8 @@
     }
   },
   "home": {
+    "analyzingText": "Analizando el monumento...",
+  "noMonuments": "Aún no hay monumentos registrados.",
     "searchPlaceholder": "Buscar lugar",
     "captureButton": "Capturar sitio",
     "sections": {
@@ -520,13 +517,19 @@
     "cathedralTitle": "La Catedral",
     "defaultSiteDescription": "El monumento religioso y arquitectónico más emblemático de Jalisco, México.",
     "alerts": {
-      "webWarning": "La función de escáner está optimizada para la app móvil. Abriendo vista de prueba...",
-      "permissionTitle": "Permiso de Cámara",
-      "permissionMessage": "\"Histour\" necesita acceder a tu cámara para usar el escáner inteligente de monumentos. ¿Permitir acceso?",
-      "deny": "Denegar",
-      "allow": "Permitir",
-      "deniedTitle": "Permiso denegado",
-      "deniedMessage": "Recuerda que puedes habilitarlo más tarde en tu configuración."
+      "notRecognizedTitle": "No reconocido",
+    "notRecognizedMessage": "No pudimos identificar ningún monumento en la foto. Asegúrate de capturar el exterior del edificio.",
+    "notFoundTitle": "Sitio no registrado",
+    "notFoundMessage": "Identificamos el lugar como \"{{name}}\", pero aún no tenemos información sobre él en la base de datos.",
+    "errorTitle": "Error de conexión",
+    "apiErrorMessage": "Hubo un problema al analizar la imagen. Si el problema persiste, verifica la cuota o restricciones de tu API Key de Google.",
+    "webWarning": "La cámara mediante IA no está disponible en la versión web.",
+    "permissionTitle": "Permiso de Cámara",
+    "permissionMessage": "Histour necesita acceso a tu cámara para identificar monumentos mediante Inteligencia Artificial.",
+    "deny": "Cancelar",
+    "allow": "Permitir",
+    "deniedTitle": "Permiso denegado",
+    "deniedMessage": "Necesitamos acceso a la cámara para usar esta función."
     }
   },
   "favorites": {

@@ -22,7 +22,7 @@ export default function LanguageScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/permissions');
+      router.replace('/intro');
     }
   };
 

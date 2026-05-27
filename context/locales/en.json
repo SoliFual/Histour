@@ -119,11 +119,6 @@
       }
     }
   },
-  "permissions": {
-    "prompt": "Allow Histour to take pictures and record video?",
-    "allow": "ALLOW",
-    "deny": "DENY"
-  },
   "modal": {
     "title": "This is a modal",
     "link": "Go to home screen"
@@ -505,6 +500,8 @@
     }
   },
   "home": {
+    "analyzingText": "Analyzing the monument...",
+  "noMonuments": "No monuments registered yet.",
     "searchPlaceholder": "Search place",
     "captureButton": "Capture site",
     "sections": {
@@ -520,13 +517,19 @@
     "cathedralTitle": "The Cathedral",
     "defaultSiteDescription": "The most iconic religious and architectural monument in Jalisco, Mexico.",
     "alerts": {
-      "webWarning": "The scanner feature is optimized for the mobile app. Opening test view...",
-      "permissionTitle": "Camera Permission",
-      "permissionMessage": "\"Histour\" needs to access your camera to use the intelligent monument scanner. Allow access?",
-      "deny": "Deny",
-      "allow": "Allow",
-      "deniedTitle": "Permission denied",
-      "deniedMessage": "Remember that you can enable it later in your settings."
+      "notRecognizedTitle": "Not Recognized",
+    "notRecognizedMessage": "We couldn't identify any monument in the photo. Make sure to capture the exterior of the building.",
+    "notFoundTitle": "Site Not Registered",
+    "notFoundMessage": "We identified the location as \"{{name}}\", but we don't have information about it in our database yet.",
+    "errorTitle": "Connection Error",
+    "apiErrorMessage": "There was a problem analyzing the image. If the issue persists, check your Google API Key quota or restrictions.",
+    "webWarning": "AI Camera is not available on the web version.",
+    "permissionTitle": "Camera Permission",
+    "permissionMessage": "Histour needs access to your camera to identify monuments using Artificial Intelligence.",
+    "deny": "Cancel",
+    "allow": "Allow",
+    "deniedTitle": "Permission Denied",
+    "deniedMessage": "We need access to the camera to use this feature."
     }
   },
   "favorites": {

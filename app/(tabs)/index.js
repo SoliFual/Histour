@@ -99,7 +99,6 @@ export default function HomeScreen() {
 
       const visionData = await response.json();
 
-      // Manejo de errores directos de Google API
       if (visionData.error) {
         throw new Error(visionData.error.message);
       }
@@ -164,7 +163,10 @@ export default function HomeScreen() {
       } else {
         Alert.alert(
           t('home.alerts.notFoundTitle', 'Sitio no registrado'), 
-          `Identificamos el lugar como "${recognizedNameRaw}", pero aún no tenemos información sobre él en la base de datos.`
+          t('home.alerts.notFoundMessage', { 
+            name: recognizedNameRaw, 
+            defaultValue: `Identificamos el lugar como "${recognizedNameRaw}", pero aún no tenemos información sobre él en la base de datos.` 
+          })
         );
       }
 
@@ -173,26 +175,23 @@ export default function HomeScreen() {
       setAnalizando(false);
       Alert.alert(
         t('home.alerts.errorTitle', 'Error de conexión'), 
-        "Hubo un problema al analizar la imagen. Si el problema persiste, verifica la cuota o restricciones de tu API Key de Google."
+        t('home.alerts.apiErrorMessage', 'Hubo un problema al analizar la imagen. Si el problema persiste, verifica la cuota o restricciones de tu API Key de Google.')
       );
     }
   };
 
-  // 👇 2. FUNCIÓN INTELIGENTE DE PERMISOS QUE EVITA PREGUNTAR DOS VECES 👇
+  // 👇 2. FUNCIÓN INTELIGENTE DE PERMISOS 👇
   const handleAbrirCamara = async () => {
     if (Platform.OS === 'web') {
       alert(t('home.alerts.webWarning', 'La cámara mediante IA no está disponible en la versión web.'));
       return;
     }
 
-    // A) Revisamos silenciosamente si el celular ya tiene permiso guardado
     const { status: statusActual } = await ImagePicker.getCameraPermissionsAsync();
 
     if (statusActual === 'granted') {
-      // B) Si ya tiene permiso, saltamos las alertas y vamos directo a abrir la cámara
       ejecutarCamaraYAnalisis();
     } else {
-      // C) Si NO tiene permiso, entonces sí mostramos la alerta bilingüe
       Alert.alert(
         t('home.alerts.permissionTitle', 'Permiso de Cámara'),
         t('home.alerts.permissionMessage', 'Histour necesita acceso a tu cámara para identificar monumentos mediante Inteligencia Artificial.'),
@@ -204,7 +203,6 @@ export default function HomeScreen() {
           { 
             text: t('home.alerts.allow', 'Permitir'), 
             onPress: async () => {
-              // Pedimos el permiso oficial del sistema
               const { status: nuevoStatus } = await ImagePicker.requestCameraPermissionsAsync();
               
               if (nuevoStatus === 'granted') {
@@ -317,7 +315,7 @@ export default function HomeScreen() {
               
               {topMonumentos.length === 0 && (
                 <Text style={{ color: colors.textSecondary, fontStyle: 'italic', marginLeft: 10 }}>
-                  Aún no hay monumentos registrados.
+                  {t('home.noMonuments', 'Aún no hay monumentos registrados.')}
                 </Text>
               )}
             </ScrollView>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // IMPORTACIONES DE EXPO PARA GOOGLE
+import * as AuthSession from 'expo-auth-session'; // <-- IMPORTANTE: Nueva importación para el proxy
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -13,7 +14,6 @@ import { GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 
-// Esto le dice al navegador interno de Expo que se cierre cuando el usuario termine de hacer login
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
@@ -22,18 +22,20 @@ export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // 👇 NUEVO ESTADO PARA EL OJITO DE LA CONTRASEÑA 👇
+  const [showPassword, setShowPassword] = useState(false);
 
   const { t } = useTranslation();
 
-  // 👇 CONFIGURACIÓN DE GOOGLE 👇
-  // (Tendrás que reemplazar estos textos por los IDs reales que te dé Google Cloud)
+  // 👇 CONFIGURACIÓN DE GOOGLE ACTUALIZADA CON EL PROXY 👇
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
     iosClientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
     androidClientId: '998189882000-qqmbtcsts2qnmpgbm0qg9qon62ah9rm4.apps.googleusercontent.com',
+    redirectUri: AuthSession.makeRedirectUri({ useProxy: true }), // <-- Esta línea soluciona el bloqueo
   });
 
-  // Este efecto "escucha" cuando Google nos responde con la llave de acceso
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
@@ -45,7 +47,6 @@ export default function LoginScreen() {
     }
   }, [response]);
 
-  // Función que toma la llave de Google y la mete a Firebase
   const iniciarSesionConCredencialGoogle = async (credential) => {
     setIsGoogleLoading(true);
     setErrorMessage('');
@@ -53,12 +54,10 @@ export default function LoginScreen() {
       const userCredential = await signInWithCredential(auth, credential);
       const user = userCredential.user;
 
-      // Verificamos si este usuario ya existe en tu base de datos
       const docRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        // Si ya existe, vemos si es admin o usuario normal
         const userData = docSnap.data();
         if (userData.rol === 'admin') {
           router.replace('/admin-dashboard');
@@ -66,12 +65,11 @@ export default function LoginScreen() {
           router.replace('/(tabs)');
         }
       } else {
-        // Si es la PRIMERA VEZ que entra con Google, le creamos su documento automáticamente
         await setDoc(docRef, {
           username: user.displayName || 'Usuario de Google',
           email: user.email,
           profilePicture: user.photoURL || '',
-          rol: 'user' // Por defecto lo hacemos usuario estándar
+          rol: 'user' 
         });
         router.replace('/(tabs)');
       }
@@ -153,14 +151,25 @@ export default function LoginScreen() {
         />
 
         <Text style={styles.label}>{t('login.labels.password')}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-          editable={!cargando && !isGoogleLoading}
-        />
+        
+        {/* 👇 CONTENEDOR MODIFICADO PARA EL OJITO 👇 */}
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword} // Aquí se usa el estado para ocultar/mostrar
+            editable={!cargando && !isGoogleLoading}
+          />
+          <TouchableOpacity 
+            style={styles.eyeIcon} 
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#A0A0A0" />
+          </TouchableOpacity>
+        </View>
+        {/* 👆 FIN DEL CONTENEDOR DE CONTRASEÑA 👆 */}
         
         <TouchableOpacity onPress={() => router.push('/recover')} disabled={cargando || isGoogleLoading}>
           <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
@@ -186,7 +195,6 @@ export default function LoginScreen() {
 
         <Text style={styles.orText}>{t('login.orText')}</Text>
 
-        {/* 👇 BOTÓN DE GOOGLE ACTUALIZADO 👇 */}
         <TouchableOpacity 
           style={styles.googleButton} 
           onPress={() => {
@@ -217,121 +225,31 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 30,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginRight: 10,
-  },
-  appName: {
-    fontSize: 28,
-    color: '#4E97D1',
-    fontWeight: 'bold',
-    letterSpacing: 2,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 360,
-  },
-  screenTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 25,
-    textAlign: 'left',
-  },
-  label: {
-    fontSize: 14,
-    color: '#47525E',
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 15,
-    backgroundColor: '#FAFAFA',
-  },
-  forgotPassword: {
-    color: '#4E97D1',
-    fontSize: 13,
-    textAlign: 'right',
-    marginBottom: 20,
-  },
-  errorContainer: { 
-    backgroundColor: '#FDECEA', 
-    padding: 10, 
-    borderRadius: 8, 
-    marginBottom: 15, 
-    borderLeftWidth: 4, 
-    borderLeftColor: '#E74C3C' 
-  },
-  errorText: { 
-    color: '#E74C3C', 
-    fontSize: 13, 
-    fontWeight: '500' 
-  },
-  loginButton: {
-    backgroundColor: '#4E97D1',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  orText: {
-    textAlign: 'center',
-    color: '#A0A0A0',
-    marginVertical: 12,
-    fontSize: 14,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 25,
-    height: 48,
-  },
-  googleIcon: {
-    marginRight: 10,
-  },
-  googleButtonText: {
-    color: '#47525E',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  registerContainer: {
-    marginTop: 10,
-  },
-  registerText: {
-    textAlign: 'center',
-    color: '#47525E',
-    fontSize: 14,
-  },
-  registerTextBold: {
-    color: '#4E97D1',
-    fontWeight: 'bold',
-  }
+  container: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
+  logoContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
+  logo: { width: 45, height: 45, marginRight: 10 },
+  appName: { fontSize: 28, color: '#4E97D1', fontWeight: 'bold', letterSpacing: 2 },
+  formContainer: { width: '100%', maxWidth: 360 },
+  screenTitle: { fontSize: 26, fontWeight: 'bold', color: '#333333', marginBottom: 25, textAlign: 'left' },
+  label: { fontSize: 14, color: '#47525E', marginBottom: 6, fontWeight: '500' },
+  input: { borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 15, backgroundColor: '#FAFAFA' },
+  
+  // 👇 NUEVOS ESTILOS PARA LA CONTRASEÑA 👇
+  passwordContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#FAFAFA', marginBottom: 15 },
+  passwordInput: { flex: 1, padding: 12, fontSize: 16 },
+  eyeIcon: { padding: 12 },
+  // 👆 FIN NUEVOS ESTILOS 👆
+
+  forgotPassword: { color: '#4E97D1', fontSize: 13, textAlign: 'right', marginBottom: 20 },
+  errorContainer: { backgroundColor: '#FDECEA', padding: 10, borderRadius: 8, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#E74C3C' },
+  errorText: { color: '#E74C3C', fontSize: 13, fontWeight: '500' },
+  loginButton: { backgroundColor: '#4E97D1', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  loginButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  orText: { textAlign: 'center', color: '#A0A0A0', marginVertical: 12, fontSize: 14 },
+  googleButton: { flexDirection: 'row', borderWidth: 1, borderColor: '#CCCCCC', paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', marginBottom: 25, height: 48 },
+  googleIcon: { marginRight: 10 },
+  googleButtonText: { color: '#47525E', fontSize: 15, fontWeight: '600' },
+  registerContainer: { marginTop: 10 },
+  registerText: { textAlign: 'center', color: '#47525E', fontSize: 14 },
+  registerTextBold: { color: '#4E97D1', fontWeight: 'bold' }
 });
