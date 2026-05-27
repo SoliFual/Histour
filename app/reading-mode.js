@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
 
-// IMPORTACIONES DE FIREBASE (¡Agregamos auth para identificar al usuario!)
+// IMPORTACIONES DE FIREBASE
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 
@@ -69,7 +69,7 @@ export default function ReadingModeScreen() {
     buscarMonumentoEnBD();
   }, [idRecibido]);
 
-  // 👇 SISTEMA DE CALIFICACIÓN ÚNICA POR USUARIO 👇
+  // SISTEMA DE CALIFICACIÓN ÚNICA POR USUARIO
   const enviarCalificacion = async () => {
     const user = auth.currentUser;
     if (!user) {
@@ -94,10 +94,7 @@ export default function ReadingModeScreen() {
       const calificacionActual = datosBD.calificacionPromedio || 0;
       const totalVotosActuales = datosBD.totalVotos || 0;
       
-      // Diccionario de usuarios que ya votaron (si no existe, lo creamos vacío)
       const userRatings = datosBD.userRatings || {};
-      
-      // Checamos si este usuario en particular ya tenía un voto registrado
       const votoAnterior = userRatings[uid];
 
       let nuevoTotalVotos = totalVotosActuales;
@@ -105,34 +102,27 @@ export default function ReadingModeScreen() {
       const sumaTotalAnterior = calificacionActual * totalVotosActuales;
 
       if (votoAnterior) {
-        // ESCENARIO 1: EL USUARIO ESTÁ MODIFICANDO SU VOTO
-        // Restamos su voto viejo de la suma, y le agregamos su voto nuevo
         const sumaCorregida = sumaTotalAnterior - votoAnterior + rating;
-        // Como es el mismo usuario, el total de personas no cambia
         nuevoPromedio = nuevoTotalVotos === 0 ? rating : sumaCorregida / nuevoTotalVotos;
       } else {
-        // ESCENARIO 2: ES EL PRIMER VOTO DE ESTE USUARIO
         nuevoTotalVotos += 1;
         const nuevaSuma = sumaTotalAnterior + rating;
         nuevoPromedio = nuevaSuma / nuevoTotalVotos;
       }
 
-      // Guardamos o actualizamos su calificación en el diccionario
       userRatings[uid] = rating;
 
-      // Mandamos los datos fresquecitos a Firebase
       const docRef = doc(db, "monuments", idDocumento);
       await updateDoc(docRef, {
         calificacionPromedio: nuevoPromedio,
         totalVotos: nuevoTotalVotos,
         rating: nuevoPromedio, 
         promedio: nuevoPromedio,
-        userRatings: userRatings // Guardamos la huella del usuario
+        userRatings: userRatings 
       });
 
       alert(t('readingMode.alerts.successRating', { rating }));
       
-      // Actualizamos el estado local para que todo siga funcionando fluido
       setDatosBD(prev => ({
         ...prev,
         calificacionPromedio: nuevoPromedio,
@@ -178,9 +168,13 @@ export default function ReadingModeScreen() {
   const tituloFinal = datosIdioma.nombre || datosIdioma.name || datosBD?.nombre || datosBD?.name || tituloRecibido;
   const textoLeyendas = datosIdioma.leyendas || datosBD?.leyendas || desempaquetarSeguro(params.legends) || "Aún no se han registrado leyendas para este sitio.";
   const textoHistoria = datosIdioma.descripcion || datosIdioma.historia || datosBD?.descripcionCompleta || datosBD?.description || desempaquetarSeguro(params.fullText) || "Aún no se ha registrado la historia completa de este sitio.";
+  
+  // EXTRACCIÓN DE FUENTES
+  const textoFuentes = datosIdioma.fuentes || datosIdioma.sources || datosBD?.fuentes || datosBD?.sources || (currentLang === 'en' ? "No sources registered for this site." : "No se han registrado fuentes para este sitio.");
 
   const tituloCajaHistoria = currentLang === 'en' ? "History and Description" : "Historia y Descripción";
   const tituloCajaLeyendas = currentLang === 'en' ? "Legends" : "Leyendas";
+  const tituloCajaFuentes = currentLang === 'en' ? "Sources & Bibliography" : "Fuentes y Bibliografía";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -190,13 +184,13 @@ export default function ReadingModeScreen() {
           <Text style={[styles.headerTitle, { color: COLOR_LIGHT_BLUE }]}>{t('readingMode.title')}</Text>
         </TouchableOpacity>
         
-       <TouchableOpacity onPress={() => toggleFavorite({ id: idDocumento, title: tituloFinal, image: img1 })}>
-  <Ionicons 
-    name={isCurrentFavorite ? "heart" : "heart-outline"} 
-    size={35} 
-    color={COLOR_DARK_BLUE} 
-  />
-</TouchableOpacity>
+        <TouchableOpacity onPress={() => toggleFavorite({ id: idDocumento, title: tituloFinal, image: img1 })}>
+          <Ionicons 
+            name={isCurrentFavorite ? "heart" : "heart-outline"} 
+            size={35} 
+            color={COLOR_DARK_BLUE} 
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -221,15 +215,23 @@ export default function ReadingModeScreen() {
           <Text style={styles.boxText}>{textoHistoria}</Text>
         </View>
 
+        {/* 👇 ÚLTIMA FOTO 👇 */}
         <View style={[styles.imageContainer, { borderColor: COLOR_DARK_BLUE }]}>
           <Image source={{ uri: img3 }} style={styles.image} />
         </View>
 
+        {/* 👇 SECCIÓN DE BIBLIOGRAFÍA (MOVIDA AQUÍ) 👇 */}
+        <View style={[styles.sourcesBox, { backgroundColor: theme === 'light' ? '#F0F5FA' : '#1E1E1E', borderColor: colors.border }]}>
+          <Text style={[styles.sourcesHeading, { color: COLOR_DARK_BLUE }]}>{tituloCajaFuentes}</Text>
+          <Text style={[styles.sourcesText, { color: colors.textSecondary }]}>{textoFuentes}</Text>
+        </View>
+
+        {/* 👇 BOTÓN LÍNEA DEL TIEMPO 👇 */}
         <TouchableOpacity 
-          style={[styles.timelineButton, { borderColor: COLOR_LIGHT_BLUE, marginTop: 10 }]}
+          style={[styles.timelineButton, { borderColor: COLOR_LIGHT_BLUE }]}
           onPress={() => router.push({
             pathname: '/timeline',
-            params: { title: tituloFinal, timelineImage: encodeURIComponent(img1) }
+            params: { id: idDocumento,title: tituloFinal, timelineImage: encodeURIComponent(img1) }
           })}
         >
           <Text style={[styles.timelineText, { color: COLOR_LIGHT_BLUE }]}>{t('readingMode.buttons.timeline')}</Text>
@@ -263,5 +265,28 @@ export default function ReadingModeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 40 }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 }, headerLeft: { flexDirection: 'row', alignItems: 'center' }, headerTitle: { fontSize: 22, fontWeight: 'bold', fontFamily: 'serif', marginLeft: 10 }, scrollContent: { paddingHorizontal: 20, paddingBottom: 40 }, monumentTitle: { fontSize: 32, fontWeight: 'bold', fontFamily: 'serif', textAlign: 'center', marginBottom: 25, marginTop: 5 }, imageContainer: { width: '100%', height: 220, borderWidth: 4, marginBottom: 25, borderRadius: 8, overflow: 'hidden' }, image: { width: '100%', height: '100%', resizeMode: 'cover' }, boxLight: { padding: 20, marginBottom: 25, borderRadius: 8 }, boxDark: { padding: 20, marginBottom: 25, borderRadius: 8 }, sectionHeading: { fontSize: 20, fontWeight: 'bold', fontFamily: 'serif', marginBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', paddingBottom: 5 }, boxText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'serif', lineHeight: 26, textAlign: 'justify' }, timelineButton: { width: '100%', paddingVertical: 15, borderWidth: 2, borderRadius: 25, alignItems: 'center', marginBottom: 30 }, timelineText: { fontSize: 16, fontWeight: 'bold', fontFamily: 'serif' }, ratingSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.03)', padding: 15, borderRadius: 15 }, starsContainer: { flexDirection: 'row' }, starIcon: { marginRight: 5 }, rateButton: { paddingVertical: 10, paddingHorizontal: 20, borderWidth: 2, borderRadius: 20 }, rateText: { fontSize: 14, fontWeight: 'bold', fontFamily: 'serif' }
+  container: { flex: 1, paddingTop: 40 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', fontFamily: 'serif', marginLeft: 10 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  monumentTitle: { fontSize: 32, fontWeight: 'bold', fontFamily: 'serif', textAlign: 'center', marginBottom: 25, marginTop: 5 },
+  imageContainer: { width: '100%', height: 220, borderWidth: 4, marginBottom: 25, borderRadius: 8, overflow: 'hidden' },
+  image: { width: '100%', height: '100%', resizeMode: 'cover' },
+  boxLight: { padding: 20, marginBottom: 25, borderRadius: 8 },
+  boxDark: { padding: 20, marginBottom: 25, borderRadius: 8 },
+  sectionHeading: { fontSize: 20, fontWeight: 'bold', fontFamily: 'serif', marginBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', paddingBottom: 5 },
+  boxText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'serif', lineHeight: 26, textAlign: 'justify' },
+  timelineButton: { width: '100%', paddingVertical: 15, borderWidth: 2, borderRadius: 25, alignItems: 'center', marginBottom: 30, marginTop: 10 },
+  timelineText: { fontSize: 16, fontWeight: 'bold', fontFamily: 'serif' },
+  ratingSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.03)', padding: 15, borderRadius: 15 },
+  starsContainer: { flexDirection: 'row' },
+  starIcon: { marginRight: 5 },
+  rateButton: { paddingVertical: 10, paddingHorizontal: 20, borderWidth: 2, borderRadius: 20 },
+  rateText: { fontSize: 14, fontWeight: 'bold', fontFamily: 'serif' },
+  
+  /* ESTILOS PARA LA CAJA DE FUENTES */
+  sourcesBox: { padding: 20, marginBottom: 25, borderRadius: 8, borderWidth: 1 },
+  sourcesHeading: { fontSize: 18, fontWeight: 'bold', fontFamily: 'serif', marginBottom: 8 },
+  sourcesText: { fontSize: 14, fontFamily: 'serif', lineHeight: 22, fontStyle: 'italic' }
 });

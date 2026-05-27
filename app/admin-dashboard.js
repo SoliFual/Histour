@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -16,7 +16,7 @@ export default function AdminDashboardScreen() {
   const { t } = useTranslation();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [carouselImages, setCarouselImages] = useState([]); 
+  const [carouselImages, setCarouselImages] = useState([]);
   const [stats, setStats] = useState({ monuments: 0, users: 0, admins: 0 });
   const [cargando, setCargando] = useState(true);
 
@@ -35,11 +35,11 @@ export default function AdminDashboardScreen() {
         const monumentsCount = monumentsSnapshot.size;
 
         let imagenesExtraidas = [];
-        
+
         monumentsSnapshot.forEach((doc) => {
           const data = doc.data();
           let primeraImagen = null;
-          
+
           // 👇 ¡AQUÍ ESTÁ LA MAGIA! Agregamos la variable exacta de tu base de datos: imagenesUrls 👇
           if (data.imagenesUrls && Array.isArray(data.imagenesUrls) && data.imagenesUrls.length > 0) primeraImagen = data.imagenesUrls[0];
           else if (data.imagenes && Array.isArray(data.imagenes) && data.imagenes.length > 0) primeraImagen = data.imagenes[0];
@@ -83,14 +83,14 @@ export default function AdminDashboardScreen() {
 
     const timer = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % carouselImages.length);
-    }, 3000); 
+    }, 3000);
     return () => clearInterval(timer);
   }, [carouselImages.length]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Image source={require('../assets/images/header_admindesign.png')} style={styles.backgroundImage} resizeMode="cover" />
-      
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.mainCard, { backgroundColor: colors.background }]}>
           <Text style={[styles.mainTitle, { color: theme === 'light' ? '#1A3B5C' : colors.text }]}>
@@ -132,7 +132,7 @@ export default function AdminDashboardScreen() {
                     <Text style={[styles.statNumber, { color: colors.text }]}>{stats.monuments}</Text>
                   </View>
                 </View>
-                
+
                 <View style={[styles.statBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('adminDashboard.stats.users')}</Text>
                   <View style={styles.statValueRow}>
@@ -141,7 +141,7 @@ export default function AdminDashboardScreen() {
                   </View>
                 </View>
               </View>
-              
+
               <View style={styles.statsRow}>
                 <View style={[styles.statBox, { width: '48%', backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('adminDashboard.stats.admins')}</Text>
@@ -162,17 +162,17 @@ export default function AdminDashboardScreen() {
           <Ionicons name="home" size={22} color="#FFFFFF" />
           <Text style={[styles.navText, { fontWeight: 'bold' }]}>{t('admin.principal')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navItem} onPress={() => router.replace('/admin-profile')}>
           <Ionicons name="person" size={22} color="#FFFFFF" />
           <Text style={styles.navText}>{t('admin.perfil')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navItem} onPress={() => router.replace('/admin-users')}>
           <Ionicons name="settings" size={22} color="#FFFFFF" />
           <Text style={styles.navText}>{t('admin.usuarios')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navItem} onPress={() => router.replace('/admin-monuments')}>
           <Ionicons name="library" size={22} color="#FFFFFF" />
           <Text style={styles.navText}>{t('admin.monumentos')}</Text>
@@ -185,7 +185,7 @@ export default function AdminDashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backgroundImage: { position: 'absolute', top: 0, width: '100%', height: 300 },
-  scrollContent: { paddingTop: 180, paddingBottom: 120 }, 
+  scrollContent: { paddingTop: 180, paddingBottom: 120 },
   mainCard: { borderTopLeftRadius: 30, borderTopRightRadius: 30, minHeight: height - 180, paddingHorizontal: 20, paddingTop: 25 },
   mainTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20 },
   carouselContainer: { width: '100%', height: 180, borderRadius: 15, overflow: 'hidden', marginBottom: 25 },
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, marginBottom: 8 },
   statValueRow: { flexDirection: 'row', alignItems: 'center' },
   statNumber: { fontSize: 22, fontWeight: 'bold', marginLeft: 8 },
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#0A2342', height: 90, paddingBottom: 20, position: 'absolute', bottom: 0, width: '100%' }, 
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#0A2342', height: 90, paddingBottom: 20, position: 'absolute', bottom: 0, width: '100%' },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navText: { fontSize: 9, color: '#FFFFFF', textAlign: 'center', marginTop: 4, fontWeight: '500' }
 });

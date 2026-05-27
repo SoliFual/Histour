@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -15,7 +15,10 @@ export default function AdminMonumentsScreen() {
   const { t, i18n } = useTranslation(); 
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [menuActivo, setMenuActivo] = useState<string | null>(null);
+  
+  // 👇 Se quitó el <string | null> 👇
+  const [menuActivo, setMenuActivo] = useState(null);
+  
   const [monumentos, setMonumentos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -68,22 +71,26 @@ export default function AdminMonumentsScreen() {
            monumento.displayId.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const toggleMenu = (id: string) => {
+  // 👇 Se quitó el ": string" 👇
+  const toggleMenu = (id) => {
     if (menuActivo === id) setMenuActivo(null);
     else setMenuActivo(id);
   };
 
-  const handleVer = (firestoreId: string) => {
+  // 👇 Se quitó el ": string" 👇
+  const handleVer = (firestoreId) => {
     setMenuActivo(null);
     router.push({ pathname: '/admin-view-monument', params: { id: firestoreId } }); 
   };
 
-  const handleModificar = (firestoreId: string) => {
+  // 👇 Se quitó el ": string" 👇
+  const handleModificar = (firestoreId) => {
     setMenuActivo(null);
     router.push({ pathname: '/admin-modify-monument', params: { id: firestoreId } }); 
   };
 
-  const handleEliminar = (firestoreId: string, name: string) => {
+  // 👇 Se quitaron los ": string" 👇
+  const handleEliminar = (firestoreId, name) => {
     setMenuActivo(null);
     const ejecutarEliminacion = async () => {
       try {

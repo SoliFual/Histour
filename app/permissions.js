@@ -1,27 +1,63 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// 1. Importamos el traductor
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// 1. IMPORTAMOS IMAGE PICKER PARA GESTIONAR LOS PERMISOS REALES
+import * as ImagePicker from 'expo-image-picker';
 
 export default function PermissionsScreen() {
-  
-  // 2. Activamos el traductor
   const { t } = useTranslation();
+  
+  // Estado para evitar que la pantalla parpadee mientras revisamos los permisos en silencio
+  const [revisando, setRevisando] = useState(true);
 
-  // Función para cuando el usuario acepta el permiso
-  const handlePermitir = () => {
-    // Nota: Más adelante, aquí agregaremos el código real de Expo para encender la cámara de verdad.
-    // Por ahora, simularemos que ya nos dio permiso y avanzamos a la pantalla principal.
-    router.replace('/intro'); 
+  // 2. REVISIÓN SILENCIOSA AL ABRIR LA PANTALLA
+  useEffect(() => {
+    const verificarPermisosPrevios = async () => {
+      // Preguntamos el estatus actual sin mostrar ninguna alerta al usuario
+      const { status } = await ImagePicker.getCameraPermissionsAsync();
+      
+      if (status === 'granted') {
+        // Si ya nos dio permiso antes, lo mandamos a la siguiente pantalla inmediatamente
+        router.replace('/intro'); 
+      } else {
+        // Si no tiene permiso, apagamos la carga y mostramos tu diseño
+        setRevisando(false);
+      }
+    };
+
+    verificarPermisosPrevios();
+  }, []);
+
+  // 3. FUNCIÓN PARA CUANDO EL USUARIO PRESIONA "PERMITIR" EN TU DISEÑO
+  const handlePermitir = async () => {
+    // Aquí detonamos la alerta oficial del celular (Android/iOS)
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status === 'granted') {
+      // Si aceptó en la alerta del celular, avanzamos
+      router.replace('/intro'); 
+    } else {
+      // Si rechazó en la alerta del celular, también avanzamos (la cámara en home le avisará después)
+      router.replace('/intro'); 
+    }
   };
 
-  // Función para cuando el usuario rechaza el permiso
+  // Función para cuando el usuario rechaza el permiso desde tu diseño
   const handleDenegar = () => {
-    // Si dice que no, igual lo mandamos al inicio por ahora (aunque sin cámara habilitada)
     router.replace('/intro'); 
   };
+
+  // Si estamos haciendo la revisión silenciosa, mostramos una pantalla de carga sutil
+  if (revisando) {
+    return (
+      <ImageBackground source={require('../assets/images/agave-background.png')} style={styles.background} resizeMode="cover">
+        <ActivityIndicator size="large" color="#4E97D1" />
+      </ImageBackground>
+    );
+  }
 
   return (
     <ImageBackground

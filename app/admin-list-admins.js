@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-// 1. IMPORTACIONES DE FIREBASE
+// IMPORTACIONES DE FIREBASE
 import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
@@ -14,13 +14,13 @@ export default function AdminListAdminsScreen() {
   const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [menuActivo, setMenuActivo] = useState<string | null>(null);
   
-  // 2. ESTADOS REALES
+  // 👇 Se quitó el <string | null> de TypeScript 👇
+  const [menuActivo, setMenuActivo] = useState(null);
+  
   const [admins, setAdmins] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  // 3. EFECTO PARA CARGAR ADMINISTRADORES DESDE FIRESTORE
   useEffect(() => {
     cargarAdministradores();
   }, []);
@@ -28,7 +28,6 @@ export default function AdminListAdminsScreen() {
   const cargarAdministradores = async () => {
     setCargando(true);
     try {
-      // Hacemos una consulta solo buscando los que tengan rol 'admin'
       const q = query(collection(db, "users"), where("rol", "==", "admin"));
       const querySnapshot = await getDocs(q);
       
@@ -36,8 +35,8 @@ export default function AdminListAdminsScreen() {
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         adminsTemp.push({
-          uid: doc.id, // El UID real de Firebase
-          id: data.userId || '#---', // El consecutivo que inventamos
+          uid: doc.id, 
+          id: data.userId || '#---', 
           username: data.username || 'Sin usuario',
           foto: data.profilePicture || null
         });
@@ -56,13 +55,14 @@ export default function AdminListAdminsScreen() {
     admin.id.includes(searchQuery)
   );
 
-  const toggleMenu = (uid: string) => {
+  // 👇 Se quitó el ": string" del parámetro uid 👇
+  const toggleMenu = (uid) => {
     if (menuActivo === uid) setMenuActivo(null);
     else setMenuActivo(uid);
   };
 
-  // 4. VER PERFIL (Le mandamos el UID real a la siguiente pantalla)
-  const handleVerPerfil = (uid: string) => {
+  // 👇 Se quitó el ": string" del parámetro uid 👇
+  const handleVerPerfil = (uid) => {
     setMenuActivo(null); 
     router.push({ 
       pathname: '/admin-view-profile', 
@@ -70,16 +70,14 @@ export default function AdminListAdminsScreen() {
     }); 
   };
 
-  // 5. ELIMINAR ADMINISTRADOR REAL DE FIRESTORE
-  const handleEliminar = (uid: string, username: string) => {
+  // 👇 Se quitaron los ": string" de uid y username 👇
+  const handleEliminar = (uid, username) => {
     setMenuActivo(null);
 
     const ejecutarEliminacion = async () => {
       try {
-        // Borramos el documento de Firestore
         await deleteDoc(doc(db, "users", uid));
         
-        // Actualizamos la pantalla quitándolo de la lista
         setAdmins(prev => prev.filter(admin => admin.uid !== uid));
         
         if (Platform.OS === 'web') alert(t('adminListAdmins.alerts.deleteSuccessWeb', { username }));

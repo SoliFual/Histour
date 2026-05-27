@@ -17,7 +17,7 @@ const TRANSLATION_API_KEY = "AIzaSyDWG8cLxDpNYcQj4oO1wDmjGt3IAIWST6o";
 
 export default function AdminModifyMonumentScreen() {
   const { colors } = useTheme();
-  const { t, i18n } = useTranslation(); // Agregamos i18n para saber el idioma actual
+  const { t, i18n } = useTranslation(); 
   
   const { id } = useLocalSearchParams(); 
 
@@ -61,10 +61,7 @@ export default function AdminModifyMonumentScreen() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           
-          // Detectar idioma actual de la app ('en' o 'es')
           const currentLang = i18n.language?.startsWith('en') ? 'en' : 'es';
-          
-          // Buscar en la carpeta de traducciones, si no existe, usar la raíz por compatibilidad
           const textos = data.traducciones?.[currentLang] || data;
 
           setNombre(textos.nombre || data.nombre || '');
@@ -76,7 +73,6 @@ export default function AdminModifyMonumentScreen() {
           setUrlUbicacion(data.urlUbicacion || '');
           setCategoria(data.categoria || 'Monumentos');
           
-          // Cargar URLs existentes
           setImagenesUrls(data.imagenesUrls || []);
           setTimelineUrl(data.timelineUrl || '');
           setAudioEsUrl(data.audiosUrls?.es || '');
@@ -101,7 +97,7 @@ export default function AdminModifyMonumentScreen() {
       const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATION_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: text, target: targetLang }) // Sin source, detecta solo
+        body: JSON.stringify({ q: text, target: targetLang }) 
       });
       const data = await response.json();
       return data.data.translations[0].translatedText;
@@ -111,14 +107,13 @@ export default function AdminModifyMonumentScreen() {
     }
   };
 
-  // FUNCIONES DE MULTIMEDIA (Adaptadas para no sobreescribir)
   const totalImagenes = imagenesUrls.length + nuevasImagenesUris.length;
 
   const pickImages = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      selectionLimit: 3 - totalImagenes, // Solo deja subir las que falten para llegar a 3
+      selectionLimit: 3 - totalImagenes, 
       quality: 0.7,
     });
     if (!result.canceled) {
@@ -135,7 +130,7 @@ export default function AdminModifyMonumentScreen() {
     });
     if (!result.canceled) {
       setTimelineUri(result.assets[0].uri);
-      setTimelineUrl(''); // Si sube una nueva, quitamos la vieja
+      setTimelineUrl(''); 
     }
   };
 
@@ -168,6 +163,7 @@ export default function AdminModifyMonumentScreen() {
     return await getDownloadURL(storageRef);
   };
 
+// 👇 REEMPLAZA SOLO TU FUNCIÓN handleGuardarCambios 👇
   const handleGuardarCambios = async () => {
     if (!nombre || !descripcion) {
       Alert.alert(t('adminAddMonument.errorTitle'), t('adminAddMonument.errorIncomplete'));
@@ -183,49 +179,68 @@ export default function AdminModifyMonumentScreen() {
         urlsDeImagenesFinales.push(url);
       }
 
-      // 2. Subir Timeline y Audios (solo si hay nuevos, si no se conservan o se quedan vacíos)
+      // 2. Subir Timeline y Audios
       const timelineUrlFinal = timelineUri ? await uploadFile(timelineUri, 'timelines') : timelineUrl;
       const audioEsLinkFinal = audioEsUri ? await uploadFile(audioEsUri, 'audios_es') : audioEsUrl;
       const audioEnLinkFinal = audioEnUri ? await uploadFile(audioEnUri, 'audios_en') : audioEnUrl;
 
-      // 3. Traducciones (No importa el idioma en el que el admin haya escrito)
-      const nombreEn = await translateText(nombre, 'en');
-      const fraseEn = await translateText(frase, 'en');
-      const descripcionEn = await translateText(descripcion, 'en');
-      const leyendasEn = await translateText(leyendas, 'en');
-      const fuentesEn = await translateText(fuentes, 'en');
-
-      const nombreEs = await translateText(nombre, 'es');
-      const fraseEs = await translateText(frase, 'es');
-      const descripcionEs = await translateText(descripcion, 'es');
-      const leyendasEs = await translateText(leyendas, 'es');
-      const fuentesEs = await translateText(fuentes, 'es');
-
-      const traducciones = {
-        es: { nombre: nombreEs, frase: fraseEs, descripcion: descripcionEs, leyendas: leyendasEs, fuentes: fuentesEs },
-        en: { nombre: nombreEn, frase: fraseEn, descripcion: descripcionEn, leyendas: leyendasEn, fuentes: fuentesEn }
-      };
+      // 👇 EL CONTROLADOR DE TRÁFICO 👇
+      // Verificamos en qué idioma está la app en este momento
+      const currentLang = i18n.language?.startsWith('en') ? 'en' : 'es';
       
-      const docRef = doc(db, "monuments", id);
-      await updateDoc(docRef, {
+      let nombreEs, fraseEs, descripcionEs, leyendasEs, fuentesEs;
+      let nombreEn, fraseEn, descripcionEn, leyendasEn, fuentesEn;
+
+      if (currentLang === 'es') {
+        // A) EL ADMIN ESTÁ EN ESPAÑOL: Tomamos el texto tal cual para 'es'
+        nombreEs = nombre; fraseEs = frase; descripcionEs = descripcion; leyendasEs = leyendas; fuentesEs = fuentes;
+        
+        // Traducimos únicamente al 'en'
+        [nombreEn, fraseEn, descripcionEn, leyendasEn, fuentesEn] = await Promise.all([
+          translateText(nombre, 'en'), translateText(frase, 'en'),
+          translateText(descripcion, 'en'), translateText(leyendas, 'en'), translateText(fuentes, 'en')
+        ]);
+      } else {
+        // B) EL ADMIN ESTÁ EN INGLÉS: Tomamos el texto tal cual para 'en'
+        nombreEn = nombre; fraseEn = frase; descripcionEn = descripcion; leyendasEn = leyendas; fuentesEn = fuentes;
+        
+        // Traducimos únicamente al 'es'
+        [nombreEs, fraseEs, descripcionEs, leyendasEs, fuentesEs] = await Promise.all([
+          translateText(nombre, 'es'), translateText(frase, 'es'),
+          translateText(descripcion, 'es'), translateText(leyendas, 'es'), translateText(fuentes, 'es')
+        ]);
+      }
+
+      // 4. ESTRUCTURA TOTALMENTE NORMALIZADA
+      const datosCompletos = {
         categoria,
         urlUbicacion,
         imagenesUrls: urlsDeImagenesFinales,
         timelineUrl: timelineUrlFinal || "",
-        
-        // Guardamos también en raíz para evitar problemas estructurales
-        nombre, frase, descripcion, leyendas, fuentes,
-        
-        traducciones: traducciones,
-        
         audiosUrls: {
           es: audioEsLinkFinal || "",
           en: audioEnLinkFinal || ""
         },
         
+        // Raíz unificada (Siempre en español como base para el sistema)
+        nombre: nombreEs, 
+        frase: fraseEs, 
+        descripcion: descripcionEs, 
+        leyendas: leyendasEs, 
+        fuentes: fuentesEs,
+        
+        // Mapa de traducciones completo
+        traducciones: {
+          es: { nombre: nombreEs, frase: fraseEs, descripcion: descripcionEs, leyendas: leyendasEs, fuentes: fuentesEs },
+          en: { nombre: nombreEn, frase: fraseEn, descripcion: descripcionEn, leyendas: leyendasEn, fuentes: fuentesEn }
+        },
+        
         updatedAt: new Date(),
         actualizadoPor: "admin_sistema"
-      });
+      };
+      
+      const docRef = doc(db, "monuments", id);
+      await updateDoc(docRef, datosCompletos);
       
       const mensaje = t('adminModifyMonument.alerts.successMessage', { name: nombre });
       if (Platform.OS === 'web') {

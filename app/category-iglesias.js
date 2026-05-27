@@ -9,66 +9,69 @@ import { useTheme } from '../context/ThemeContext';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-export default function CategoryOtrosScreen() {
+export default function CategoryIglesiasScreen() {
   const { colors } = useTheme();
-  const { t } = useTranslation();
+  
+  // 👇 1. Extraemos i18n para saber el idioma actual 👇
+  const { t, i18n } = useTranslation();
 
   // ESTADOS REALES
-  const [otrosLista, setOtrosLista] = useState([]);
+  const [iglesias, setIglesias] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   // DESCARGAR Y FILTRAR DESDE FIREBASE
   useEffect(() => {
-    const cargarOtros = async () => {
+    const cargarIglesias = async () => {
+      // 👇 2. Determinamos el idioma (es o en) 👇
+      const currentLang = i18n.language ? i18n.language.substring(0, 2) : 'es';
+
       try {
         const querySnapshot = await getDocs(collection(db, "monuments"));
-        const otrosTemp = [];
+        const iglesiasTemp = [];
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const categoriaDB = (data.category || data.categoria || '').toLowerCase();
 
-          // 👇 Atrapamos todo lo que NO sea museo, iglesia, templo, catedral o monumento 👇
-          const esMuseo = categoriaDB.includes('museo');
-          const esIglesia = categoriaDB.includes('iglesia') || categoriaDB.includes('templo') || categoriaDB.includes('catedral');
-          const esMonumento = categoriaDB.includes('monumento');
-
-          // Si no es ninguna de las anteriores, o literalmente dice "otros", lo agregamos aquí
-          if ((!esMuseo && !esIglesia && !esMonumento) || categoriaDB.includes('otros')) {
+          // Filtramos inteligentemente para atrapar cualquier variante
+          if (categoriaDB.includes('iglesia') || categoriaDB.includes('templo') || categoriaDB.includes('catedral')) {
             
-            // Extraer la imagen de forma segura
             let primeraImagen = 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400'; 
             if (data.imagenesUrls && Array.isArray(data.imagenesUrls) && data.imagenesUrls.length > 0) primeraImagen = data.imagenesUrls[0];
             else if (data.image) primeraImagen = data.image;
             if (typeof primeraImagen === 'object' && primeraImagen.uri) primeraImagen = primeraImagen.uri;
 
-            // Extraer calificación
             let calificacionDB = data.calificacionPromedio || data.promedio || data.rating || data.calificacion;
             let ratingFinal = calificacionDB ? Number(calificacionDB).toFixed(1) : t('addSite.newBadge', 'Nuevo');
 
-            // Extraer título
-            let title = data.name || data.nombre || 'Sin nombre';
+            // 👇 3. LÓGICA DE TRADUCCIÓN INTELIGENTE PARA EL TÍTULO Y DESCRIPCIÓN 👇
+            const carpetaTraducciones = data.traducciones || {};
+            const datosIdioma = carpetaTraducciones[currentLang] || data[currentLang] || data.es || data || {};
 
-            otrosTemp.push({
+            let titleFinal = datosIdioma.nombre || datosIdioma.name || data.nombre || data.name || 'Sin nombre';
+            let descFinal = datosIdioma.descripcion || datosIdioma.historia || data.descripcionCompleta || data.description || t('categoryIglesias.description', { title: titleFinal });
+
+            iglesiasTemp.push({
               id: doc.id,
-              title: title,
+              title: titleFinal, // Guardamos el título ya traducido
               rating: ratingFinal,
               image: primeraImagen,
-              description: data.description || data.descripcion || t('categoryOtros.description', { title: title })
+              description: descFinal // Guardamos la descripción ya traducida
             });
           }
         });
 
-        setOtrosLista(otrosTemp);
+        setIglesias(iglesiasTemp);
       } catch (error) {
-        console.error("Error al cargar otros sitios:", error);
+        console.error("Error al cargar iglesias:", error);
       } finally {
         setCargando(false);
       }
     };
 
-    cargarOtros();
-  }, [t]);
+    cargarIglesias();
+    // 👇 4. Agregamos i18n.language para que la lista se recargue si el usuario cambia el idioma 👇
+  }, [t, i18n.language]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -78,19 +81,19 @@ export default function CategoryOtrosScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('categoryOtros.title')}</Text>
+        <Text style={styles.headerTitle}>{t('categoryIglesias.title')}</Text>
       </View>
 
       {/* CONTENIDO (Carga o Lista) */}
       {cargando ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ marginTop: 10, color: colors.textSecondary }}>Cargando sitios...</Text>
+          <Text style={{ marginTop: 10, color: colors.textSecondary }}>Cargando iglesias...</Text>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollArea}>
           <View style={styles.gridRow}>
-            {otrosLista.map((lugar) => (
+            {iglesias.map((lugar) => (
               <TouchableOpacity 
                 key={lugar.id} 
                 style={styles.card} 
@@ -99,7 +102,7 @@ export default function CategoryOtrosScreen() {
                   params: {
                     id: lugar.id,
                     title: lugar.title,
-                    // Empaquetamos para que viaje seguro por Expo Router
+                    // Empaquetamos la imagen para que Expo Router no rompa los enlaces de Firebase
                     image: encodeURIComponent(lugar.image),
                     description: encodeURIComponent(lugar.description)
                   }
@@ -119,9 +122,9 @@ export default function CategoryOtrosScreen() {
             ))}
           </View>
 
-          {otrosLista.length === 0 && (
+          {iglesias.length === 0 && (
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              {t('categoryOtros.emptyText')}
+              {t('categoryIglesias.emptyText')}
             </Text>
           )}
         </ScrollView>

@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
 
-// IMPORTACIÓN DE AUDIO (¡NUEVO!)
+// IMPORTACIÓN DE AUDIO 
 import { Audio } from 'expo-av';
 
 // IMPORTACIONES DE FIREBASE
@@ -14,7 +14,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 
 export default function AudioModeScreen() {
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
   
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language ? i18n.language.substring(0, 2) : 'es'; 
@@ -35,10 +35,10 @@ export default function AudioModeScreen() {
   const [cargando, setCargando] = useState(true);
   const [idDocumento, setIdDocumento] = useState(idRecibido); 
 
-  // ESTADOS DE AUDIO (¡NUEVOS!)
+  // ESTADOS DE AUDIO
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // Para mover la barra real
+  const [progress, setProgress] = useState(0); 
   const [cargandoAudio, setCargandoAudio] = useState(false);
 
   // ESTADOS DE FAVORITOS Y RATING
@@ -77,7 +77,7 @@ export default function AudioModeScreen() {
     buscarMonumentoEnBD();
   }, [idRecibido]);
 
-  // 👇 2. LÓGICA DE REPRODUCCIÓN DE AUDIO REAL 👇
+  // 2. LÓGICA DE REPRODUCCIÓN DE AUDIO REAL 
   const urlAudioBilingue = datosBD?.audiosUrls?.[currentLang] || datosBD?.audiosUrls?.es || '';
 
   const reproducirPausarAudio = async () => {
@@ -117,10 +117,8 @@ export default function AudioModeScreen() {
 
   const actualizarProgresoVisual = (status) => {
     if (status.isLoaded) {
-      // Calculamos qué porcentaje del audio ha avanzado (0 a 1)
       setProgress(status.positionMillis / status.durationMillis);
       
-      // Si el audio terminó, lo regresamos al inicio
       if (status.didJustFinish) {
         setIsPlaying(false);
         setProgress(0);
@@ -227,8 +225,11 @@ export default function AudioModeScreen() {
   const carpetaTraducciones = datosBD?.traducciones || {};
   const datosIdioma = carpetaTraducciones[currentLang] || datosBD?.[currentLang] || datosBD?.es || datosBD || {};
   const tituloFinal = datosIdioma.nombre || datosIdioma.name || datosBD?.nombre || datosBD?.name || tituloRecibido;
+  
+  // 👇 NUEVA EXTRACCIÓN DE FUENTES 👇
+  const textoFuentes = datosIdioma.fuentes || datosIdioma.sources || datosBD?.fuentes || datosBD?.sources || (currentLang === 'en' ? "No sources registered for this site." : "No se han registrado fuentes para este sitio.");
+  const tituloCajaFuentes = currentLang === 'en' ? "Sources & Bibliography" : "Fuentes y Bibliografía";
 
-  // Calculamos el porcentaje real para la barra visual (ej. "45%")
   const progressPercent = `${(progress * 100) || 0}%`;
 
   return (
@@ -252,7 +253,6 @@ export default function AudioModeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* TÍTULO GRANDE HASTA ARRIBA */}
         <Text style={[styles.monumentTitle, { color: colors.text }]}>{tituloFinal}</Text>
         
         {/* REPRODUCTOR DE AUDIO REAL */}
@@ -270,7 +270,7 @@ export default function AudioModeScreen() {
                   name={isPlaying ? "pause" : "play"} 
                   size={22} 
                   color={COLOR_DARK_BLUE} 
-                  style={{ marginLeft: isPlaying ? 0 : 2 }} // Centra el ícono de play
+                  style={{ marginLeft: isPlaying ? 0 : 2 }} 
                 />
               )}
             </TouchableOpacity>
@@ -291,16 +291,24 @@ export default function AudioModeScreen() {
           <Image source={{ uri: img2 }} style={styles.image} />
         </View>
 
+        {/* 👇 ÚLTIMA FOTO 👇 */}
         <View style={[styles.imageContainer, { borderColor: COLOR_LIGHT_BLUE }]}>
           <Image source={{ uri: img3 }} style={styles.image} />
         </View>
 
-        {/* BOTÓN LÍNEA DEL TIEMPO */}
+        {/* 👇 SECCIÓN DE BIBLIOGRAFÍA 👇 */}
+        <View style={[styles.sourcesBox, { backgroundColor: theme === 'light' ? '#F0F5FA' : '#1E1E1E', borderColor: colors.border }]}>
+          <Text style={[styles.sourcesHeading, { color: COLOR_DARK_BLUE }]}>{tituloCajaFuentes}</Text>
+          <Text style={[styles.sourcesText, { color: colors.textSecondary }]}>{textoFuentes}</Text>
+        </View>
+
+        {/* 👇 BOTÓN LÍNEA DEL TIEMPO 👇 */}
         <TouchableOpacity 
           style={[styles.timelineButton, { borderColor: COLOR_LIGHT_BLUE }]}
           onPress={() => router.push({
             pathname: '/timeline',
             params: {
+                id: idDocumento,
               title: tituloFinal, 
               timelineImage: encodeURIComponent(img1)
             }
@@ -438,6 +446,26 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+
+  /* 👇 ESTILOS PARA LA CAJA DE FUENTES 👇 */
+  sourcesBox: { 
+    padding: 20, 
+    marginBottom: 25, 
+    borderRadius: 8, 
+    borderWidth: 1 
+  },
+  sourcesHeading: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    fontFamily: 'serif', 
+    marginBottom: 8 
+  },
+  sourcesText: { 
+    fontSize: 14, 
+    fontFamily: 'serif', 
+    lineHeight: 22, 
+    fontStyle: 'italic' 
   },
 
   /* ESTILOS BOTONES INFERIORES */

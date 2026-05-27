@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, ImageBackground, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, ImageBackground, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 // IMPORTACIONES DE FIREBASE
@@ -15,9 +15,9 @@ export default function CalendarScreen() {
   const { colors, theme } = useTheme();
   const params = useLocalSearchParams();
   
-  // 👇 1. Extraemos el traductor y el idioma actual 👇
+  // 1. Extraemos el traductor y el idioma actual
   const { t, i18n } = useTranslation();
-  const currentLang = i18n.language || 'es'; // 'es' o 'en'
+  const currentLang = i18n.language ? i18n.language.substring(0, 2) : 'es'; 
 
   const fechaActual = new Date(); 
   const mesActualReal = fechaActual.getMonth();
@@ -31,11 +31,14 @@ export default function CalendarScreen() {
   
   const [baseDeDatos, setBaseDeDatos] = useState({}); 
   const [datosCargados, setDatosCargados] = useState(false);
+  
+  // 👇 NUEVO ESTADO: Para mostrar la carga mientras traduce en vivo 👇
+  const [cargandoItinerario, setCargandoItinerario] = useState(false);
 
   const mesesTraducidos = t('calendar.months', { returnObjects: true });
   const diasTraducidos = t('calendar.days', { returnObjects: true });
 
-  // CARGA DE ITINERARIOS
+  // CARGA DE ITINERARIOS (La estructura base del usuario)
   useEffect(() => {
     const cargarItinerarios = async () => {
       const user = auth.currentUser;
@@ -59,7 +62,7 @@ export default function CalendarScreen() {
     cargarItinerarios();
   }, []);
 
-  // AGREGAR NUEVO SITIO AL CALENDARIO
+  // AGREGAR NUEVO SITIO AL CALENDARIO (Solo guardamos el esqueleto)
   useEffect(() => {
     if (!datosCargados || !params.nuevoSitioId || !params.fechaObjetivo) return;
 
@@ -69,64 +72,34 @@ export default function CalendarScreen() {
       const time = Array.isArray(params.nuevoSitioTime) ? params.nuevoSitioTime[0] : params.nuevoSitioTime || '12:00';
 
       try {
-        const sitioRef = doc(db, "monuments", idSitio);
-        const sitioSnap = await getDoc(sitioRef);
-
-        if (!sitioSnap.exists()) {
-          console.log("No se encontró el sitio en la BD");
-          return;
-        }
-
-        const data = sitioSnap.data();
-        
-        // 👇 2. LÓGICA BILINGÜE PARA EXTRAER LOS DATOS 👇
-        const datosIdioma = data[currentLang] || data.es || data;
-
-        // Buscamos el título en el idioma actual, si no, usamos el general
-        const title = datosIdioma.nombre || datosIdioma.name || data.name || data.nombre || 'Sin nombre';
-        
-        // Buscamos la dirección en el idioma actual
-        const address = datosIdioma.direccion || datosIdioma.address || datosIdioma.ubicacion || data.direccion || data.ubicacion || data.address || '';
-        
-        const urlMapa = data.urlUbicacion || data.urlMaps || data.mapa || '';
-
-        let image = 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400';
-        if (data.imagenesUrls && Array.isArray(data.imagenesUrls) && data.imagenesUrls.length > 0) image = data.imagenesUrls[0];
-        else if (data.image) image = data.image;
-        if (typeof image === 'object' && image.uri) image = image.uri;
-
         const baseActualizada = { ...baseDeDatos };
         if (!baseActualizada[fecha]) baseActualizada[fecha] = [];
 
+        // Evitamos duplicados verificando el ID base
         const yaExiste = baseActualizada[fecha].some(lugar => lugar.id.includes(idSitio));
         
         if (!yaExiste) {
-          const nuevoLugar = {
-            id: idSitio + '-' + Date.now(), 
-            title: title,
-            url: urlMapa, 
-            address: address, 
+          // 👇 ESTRATEGIA NUEVA: Solo guardamos la información estructural 👇
+          const nuevoLugarEsqueleto = {
+            id: idSitio + '-' + Date.now(), // ID único para el calendario
+            monumentId: idSitio, // ID real del monumento para buscarlo luego
             time: time,
             checked: false, 
-            image: image 
           };
           
-          baseActualizada[fecha] = [...baseActualizada[fecha], nuevoLugar].sort((a, b) => a.time.localeCompare(b.time));
-          
+          baseActualizada[fecha] = [...baseActualizada[fecha], nuevoLugarEsqueleto].sort((a, b) => a.time.localeCompare(b.time));
           setBaseDeDatos(baseActualizada);
-          setItinerarioDia(baseActualizada[fecha]);
-          setDiaSeleccionado(fecha);
-          setSidebarVisible(true);
 
           const user = auth.currentUser;
           if (user) {
             const docRef = doc(db, "users", user.uid, "itinerarios", fecha);
             await setDoc(docRef, { lugares: baseActualizada[fecha] }, { merge: true });
           }
+
+          // Invocamos la función de abrir itinerario para que haga la magia de traducción
+          abrirItinerario(parseInt(fecha.split('-')[2], 10));
         } else {
-          setItinerarioDia(baseActualizada[fecha]);
-          setDiaSeleccionado(fecha);
-          setSidebarVisible(true);
+          abrirItinerario(parseInt(fecha.split('-')[2], 10));
         }
       } catch (error) {
         console.error("Error al procesar el nuevo sitio:", error);
@@ -134,18 +107,24 @@ export default function CalendarScreen() {
     };
 
     procesarNuevoSitio();
-  }, [datosCargados, params.nuevoSitioId, params.fechaObjetivo, params.nuevoSitioTime, currentLang]); 
-  // ↑ Agregué currentLang a las dependencias para que recalcule si cambias de idioma.
+  }, [datosCargados, params.nuevoSitioId, params.fechaObjetivo, params.nuevoSitioTime]);
 
   const toggleCheck = async (fecha, lugarId) => {
     const baseActualizada = { ...baseDeDatos };
-    const indice = baseActualizada[fecha].findIndex(l => l.id === lugarId);
+    const indiceBase = baseActualizada[fecha].findIndex(l => l.id === lugarId);
     
-    if (indice !== -1) {
-      baseActualizada[fecha][indice].checked = !baseActualizada[fecha][indice].checked;
+    if (indiceBase !== -1) {
+      // 1. Actualizamos base de datos local
+      baseActualizada[fecha][indiceBase].checked = !baseActualizada[fecha][indiceBase].checked;
       setBaseDeDatos(baseActualizada);
-      setItinerarioDia([...baseActualizada[fecha]]);
+      
+      // 2. Actualizamos estado visual del panel para que la palomita se vea al instante
+      const itinerarioVisualAct = itinerarioDia.map(l => 
+        l.id === lugarId ? { ...l, checked: !l.checked } : l
+      );
+      setItinerarioDia(itinerarioVisualAct);
 
+      // 3. Sincronizamos con Firebase
       const user = auth.currentUser;
       if (user) {
         const docRef = doc(db, "users", user.uid, "itinerarios", fecha);
@@ -183,17 +162,77 @@ export default function CalendarScreen() {
     return cuadricula;
   };
 
-  const abrirItinerario = (dia) => {
+  // 👇 LÓGICA MÁGICA: BÚSQUEDA Y TRADUCCIÓN EN VIVO 👇
+  const abrirItinerario = async (dia) => {
     if (!dia) return;
     const mesFormateado = String(mesVisible + 1).padStart(2, '0');
     const diaFormateado = String(dia).padStart(2, '0');
     const fechaString = `${anioVisible}-${mesFormateado}-${diaFormateado}`;
     
-    const lugares = baseDeDatos[fechaString] ? [...baseDeDatos[fechaString]] : [];
-    setItinerarioDia(lugares);
     setDiaSeleccionado(fechaString);
     setSidebarVisible(true);
+    setCargandoItinerario(true); // Encendemos la ruedita
+
+    const lugaresGuardados = baseDeDatos[fechaString] || [];
+
+    try {
+      const promesas = lugaresGuardados.map(async (lugarBase) => {
+        // Extraemos el ID real del monumento (soportando versiones viejas del código)
+        let realId = lugarBase.monumentId || (lugarBase.id.includes('-') ? lugarBase.id.split('-')[0] : lugarBase.id);
+        
+        const docRef = doc(db, "monuments", realId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const carpetaTraducciones = data.traducciones || {};
+          const datosIdioma = carpetaTraducciones[currentLang] || data[currentLang] || data.es || data || {};
+
+          // Extraemos los textos en el idioma actual
+          const titleFinal = datosIdioma.nombre || datosIdioma.name || data.nombre || data.name || lugarBase.title || 'Sin nombre';
+          const addressFinal = datosIdioma.direccion || datosIdioma.address || datosIdioma.ubicacion || data.direccion || data.ubicacion || data.address || lugarBase.address || '';
+          const urlFinal = data.urlUbicacion || data.urlMaps || data.mapa || lugarBase.url || '';
+
+          // Imagen
+          let imageFinal = 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400';
+          if (data.imagenesUrls && Array.isArray(data.imagenesUrls) && data.imagenesUrls.length > 0) imageFinal = data.imagenesUrls[0];
+          else if (data.image) imageFinal = data.image;
+          if (typeof imageFinal === 'object' && imageFinal.uri) imageFinal = imageFinal.uri;
+
+          // Combinamos el esqueleto guardado por el usuario con la info fresca de Firebase
+          return {
+            ...lugarBase, 
+            title: titleFinal,
+            address: addressFinal,
+            url: urlFinal,
+            image: imageFinal
+          };
+        } else {
+          // Si el monumento ya no existe en la BD, devolvemos lo que tengamos guardado
+          return {
+            ...lugarBase,
+            title: lugarBase.title || 'Sitio no disponible',
+            image: lugarBase.image || 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?q=80&w=400'
+          };
+        }
+      });
+
+      const lugaresTraducidos = await Promise.all(promesas);
+      setItinerarioDia(lugaresTraducidos);
+    } catch (error) {
+      console.error("Error cargando detalles del itinerario:", error);
+    } finally {
+      setCargandoItinerario(false); // Apagamos la ruedita
+    }
   };
+
+  // Si el usuario cambia el idioma mientras el panel está abierto, volvemos a traducir
+  useEffect(() => {
+    if (sidebarVisible && diaSeleccionado) {
+      const diaNum = parseInt(diaSeleccionado.split('-')[2], 10);
+      abrirItinerario(diaNum);
+    }
+  }, [currentLang]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -242,44 +281,52 @@ export default function CalendarScreen() {
               <TouchableOpacity onPress={() => setSidebarVisible(false)}><Ionicons name="close" size={28} color="#FFFFFF" /></TouchableOpacity>
             </View>
             
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.itineraryList}>
-              {itinerarioDia.length > 0 ? itinerarioDia.map((lugar) => (
-                <View key={lugar.id} style={[styles.placeCard, { backgroundColor: theme === 'light' ? '#FFFFFF' : colors.background, borderColor: colors.border }]}>
-                  <ImageBackground source={{ uri: lugar.image }} style={[styles.placeImage, { backgroundColor: '#DDDDDD' }]} imageStyle={{ borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
-                  
-                  <View style={styles.placeDetails}>
-                    <View style={{ flex: 1, paddingRight: 10 }}>
-                      <Text style={[styles.placeTitle, { color: theme === 'light' ? colors.text : '#FFFFFF' }]} numberOfLines={1}>{lugar.title}</Text>
-                      
-                      {lugar.address ? (
-                        <Text style={[styles.placeAddress, { color: theme === 'light' ? '#666' : '#CCC' }]} numberOfLines={2}>
-                          {lugar.address}
-                        </Text>
-                      ) : null}
-
-                      {lugar.url ? (
-                        <TouchableOpacity onPress={() => Linking.openURL(lugar.url)}>
-                          <Text style={styles.placeUrl} numberOfLines={1}>📍 {lugar.url}</Text>
-                        </TouchableOpacity>
-                      ) : null}
-
-                      <Text style={[styles.placeTime, { color: theme === 'light' ? colors.text : '#FFFFFF' }]}>{lugar.time}</Text>
-                    </View>
+            {/* 👇 Mostramos ruedita de carga o la lista 👇 */}
+            {cargandoItinerario ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', marginTop: 10 }}>Preparando ruta...</Text>
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.itineraryList}>
+                {itinerarioDia.length > 0 ? itinerarioDia.map((lugar) => (
+                  <View key={lugar.id} style={[styles.placeCard, { backgroundColor: theme === 'light' ? '#FFFFFF' : colors.background, borderColor: colors.border }]}>
+                    <ImageBackground source={{ uri: lugar.image }} style={[styles.placeImage, { backgroundColor: '#DDDDDD' }]} imageStyle={{ borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
                     
-                    <TouchableOpacity 
-                      style={[styles.checkbox, lugar.checked && styles.checkboxChecked]} 
-                      onPress={() => toggleCheck(diaSeleccionado, lugar.id)}
-                    >
-                      {lugar.checked && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                    </TouchableOpacity>
+                    <View style={styles.placeDetails}>
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={[styles.placeTitle, { color: theme === 'light' ? colors.text : '#FFFFFF' }]} numberOfLines={1}>{lugar.title}</Text>
+                        
+                        {lugar.address ? (
+                          <Text style={[styles.placeAddress, { color: theme === 'light' ? '#666' : '#CCC' }]} numberOfLines={2}>
+                            {lugar.address}
+                          </Text>
+                        ) : null}
+
+                        {lugar.url ? (
+                          <TouchableOpacity onPress={() => Linking.openURL(lugar.url)}>
+                            <Text style={styles.placeUrl} numberOfLines={1}>📍 {lugar.url}</Text>
+                          </TouchableOpacity>
+                        ) : null}
+
+                        <Text style={[styles.placeTime, { color: theme === 'light' ? colors.text : '#FFFFFF' }]}>{lugar.time}</Text>
+                      </View>
+                      
+                      <TouchableOpacity 
+                        style={[styles.checkbox, lugar.checked && styles.checkboxChecked]} 
+                        onPress={() => toggleCheck(diaSeleccionado, lugar.id)}
+                      >
+                        {lugar.checked && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              )) : (
-                <View style={styles.emptyStateContainer}>
-                  <Text style={[styles.emptyStateText, { color: '#FFFFFF' }]}>{t('calendar.noEvents')}</Text>
-                </View>
-              )}
-            </ScrollView>
+                )) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Text style={[styles.emptyStateText, { color: '#FFFFFF' }]}>{t('calendar.noEvents')}</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
 
             <TouchableOpacity 
               style={[styles.addButton, { backgroundColor: theme === 'light' ? '#FFFFFF' : colors.background }]} 

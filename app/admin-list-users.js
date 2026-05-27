@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -14,7 +14,9 @@ export default function AdminListUsersScreen() {
   const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [menuActivo, setMenuActivo] = useState<string | null>(null);
+  
+  // 👇 Se quitó el <string | null> de TypeScript 👇
+  const [menuActivo, setMenuActivo] = useState(null);
   
   // 2. ESTADOS REALES PARA USUARIOS Y CARGA
   const [users, setUsers] = useState([]);
@@ -55,13 +57,14 @@ export default function AdminListUsersScreen() {
     u.username.toLowerCase().includes(searchQuery.toLowerCase()) || u.id.includes(searchQuery)
   );
 
-  const toggleMenu = (uid: string) => {
+  // 👇 Se quitó el ": string" del parámetro uid 👇
+  const toggleMenu = (uid) => {
     if (menuActivo === uid) setMenuActivo(null);
     else setMenuActivo(uid);
   };
 
-  // 4. ELIMINAR USUARIO REAL DE FIRESTORE
-  const handleEliminar = (uid: string, username: string) => {
+  // 👇 Se quitaron los ": string" de uid y username 👇
+  const handleEliminar = (uid, username) => {
     setMenuActivo(null);
     
     const ejecutar = async () => {

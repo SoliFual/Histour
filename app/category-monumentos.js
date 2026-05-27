@@ -11,7 +11,9 @@ import { db } from '../firebaseConfig';
 
 export default function CategoryMonumentosScreen() {
   const { colors } = useTheme();
-  const { t } = useTranslation();
+  
+  // 👇 1. Extraemos i18n para saber el idioma actual 👇
+  const { t, i18n } = useTranslation();
 
   // ESTADOS REALES
   const [monumentosLista, setMonumentosLista] = useState([]);
@@ -20,6 +22,9 @@ export default function CategoryMonumentosScreen() {
   // DESCARGAR Y FILTRAR DESDE FIREBASE
   useEffect(() => {
     const cargarMonumentos = async () => {
+      // 👇 2. Determinamos el idioma (es o en) 👇
+      const currentLang = i18n.language ? i18n.language.substring(0, 2) : 'es';
+
       try {
         const querySnapshot = await getDocs(collection(db, "monuments"));
         const monumentosTemp = [];
@@ -28,7 +33,7 @@ export default function CategoryMonumentosScreen() {
           const data = doc.data();
           const categoriaDB = (data.category || data.categoria || '').toLowerCase();
 
-          // 👇 Filtramos buscando específicamente la palabra "monumento" 👇
+          // Filtramos buscando específicamente la palabra "monumento"
           if (categoriaDB.includes('monumento')) {
             
             // Extraer la imagen de forma segura
@@ -41,15 +46,19 @@ export default function CategoryMonumentosScreen() {
             let calificacionDB = data.calificacionPromedio || data.promedio || data.rating || data.calificacion;
             let ratingFinal = calificacionDB ? Number(calificacionDB).toFixed(1) : t('addSite.newBadge', 'Nuevo');
 
-            // Extraer título
-            let title = data.name || data.nombre || 'Sin nombre';
+            // 👇 3. LÓGICA DE TRADUCCIÓN INTELIGENTE PARA EL TÍTULO Y DESCRIPCIÓN 👇
+            const carpetaTraducciones = data.traducciones || {};
+            const datosIdioma = carpetaTraducciones[currentLang] || data[currentLang] || data.es || data || {};
+
+            let titleFinal = datosIdioma.nombre || datosIdioma.name || data.nombre || data.name || 'Sin nombre';
+            let descFinal = datosIdioma.descripcion || datosIdioma.historia || data.descripcionCompleta || data.description || t('categoryMonumentos.description', { title: titleFinal });
 
             monumentosTemp.push({
               id: doc.id,
-              title: title,
+              title: titleFinal, // Guardamos el título ya traducido
               rating: ratingFinal,
               image: primeraImagen,
-              description: data.description || data.descripcion || t('categoryMonumentos.description', { title: title })
+              description: descFinal // Guardamos la descripción ya traducida
             });
           }
         });
@@ -63,7 +72,8 @@ export default function CategoryMonumentosScreen() {
     };
 
     cargarMonumentos();
-  }, [t]);
+    // 👇 4. Agregamos i18n.language para que la lista se recargue si el usuario cambia el idioma 👇
+  }, [t, i18n.language]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

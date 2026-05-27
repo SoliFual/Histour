@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+, "app/timeline.js", "app/site-details.js", "app/search-site.js", "app/register.js", "app/recover.js", "app/reading-mode.js", "app/privacy-policy.js", "app/permissions.js", "app/modal.js", "app/login.js", "app/_layout.js", "app/language.js", "app/intro.js", "app/index.js", "app/edit-profile.js", "app/category-otros.js", "app/category-museos.js", "app/category-monumentos.js", "app/category-iglesias.js", "app/camera.js", "app/audio-mode.js", "app/admin-view-user-profile.js", "app/admin-view-profile.js", "app/admin-view-monument.js", "app/admin-users.js", "app/admin-profile.js", "app/admin-monuments.js", "app/admin-modify-monument.js", "app/admin-list-users.js", "app/admin-list-admins.js", "app/admin-dashboard.js", "app/admin-add-monument.js", "app/admin-add-admin.js", "app/add-site.js", "app/about.js", "app/(tabs)/profile.js", "app/(tabs)/index.js"  ]
 }
